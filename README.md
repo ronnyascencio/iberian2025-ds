@@ -229,15 +229,13 @@ Implement feature engineering to improve model accuracy.
 
 ## 📤 Submission
 
-Submit a `predictions_1.json` file for the queries in task 1 and a `predictions_3.json` file containing the recommendations made by your model (Task 3). Ensure the file is formatted correctly, you are provided with the example submission files in the folder `/predictions` .
+Submit a `questions.json` file for the queries in task 1 and a `predictions_task_2.json` and `predictions_task_3.json` files containing the predictions made by your models. Ensure the file is formatted correctly.
 
 
 ## 📊 Evaluation
 - **Task 1:** The questions of this tasks will be evaluated via JSON file, comparing your answer in `questions.json` against the expected value.
 - **Task 2:** The model will be evaluated using R2. The score will be the mean for all the station predictions.
-
-- **Task 3** 
-The model will be evaluated using F1 score, average : macro.
+- **Task 3:** The model will be evaluated using F1 score, average : macro.
 
 
 The grading system will be the following:

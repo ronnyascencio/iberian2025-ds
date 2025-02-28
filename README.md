@@ -125,7 +125,8 @@ This challenge will include three tasks: an initial exploratory data analysis ta
 
 Question output format:
 ```json
-{
+{"target":
+  {
     "Q1": 0.11111,
     "Q2": {
         "1": 0.11111,
@@ -142,6 +143,7 @@ Question output format:
         "Bad": 111,
         "Very bad": 111
     }
+  }
 }
 ```
   

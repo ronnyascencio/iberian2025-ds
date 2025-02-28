@@ -30,7 +30,7 @@ Three distinct datasets will be provided:
     - `CO`
     - `PM10`
     - `PM2.5`
- - Data available at: [Download MEasuerment data](https://cdn.nuwe.io/challenges-ds-datasets/hackathon-inditex-data-24/products.zip)
+ - Data available at: [Download MEasuerment data](https://cdn.nuwe.io/challenges-ds-datasets/hackathon-schneider-pollutant/measurement_data.csv.zip)
 
 
 - Instrument data
@@ -49,7 +49,7 @@ Three distinct datasets will be provided:
         9: "Abnormal data",
     }
     ```
-  - Data available at: [Download Instrument data](https://cdn.nuwe.io/challenges-ds-datasets/hackathon-inditex-data-24/products.zip)
+  - Data available at: [Download Instrument data](https://cdn.nuwe.io/challenges-ds-datasets/hackathon-schneider-pollutant/instrument_data.csv.zip)
 
 - Pollutant data
  - Variables:

@@ -6,7 +6,6 @@ Subcategory   ➡️   Recommender systems
 
 Difficulty   ➡️   Medium
 
-Expected solution time ➡️ 8 hours. However, if you need more time, it will not affect your score. The timer will begin when you click the start button and will stop upon your submission
 
 ---
 
@@ -30,7 +29,7 @@ Three distinct datasets will be provided:
     - `CO`
     - `PM10`
     - `PM2.5`
- - Data available at: [Download Measurement data](https://cdn.nuwe.io/challenges-ds-datasets/hackathon-schneider-pollutant/measurement_data.csv.zip)
+ - Data available at: [Download Measurement data](https://cdn.nuwe.io/challenges-ds-datasets/hackathon-schneider-pollutant/measurement_data.zip)
 
 
 - Instrument data
@@ -42,6 +41,7 @@ Three distinct datasets will be provided:
     - `Instrument status` : Status of the measuring instrument when the sample was taken.
     ```json
     {
+        0: "Normal",
         1: "Need for calibration",
         2: "Abnormal",
         4: "Power cut off",
@@ -49,7 +49,7 @@ Three distinct datasets will be provided:
         9: "Abnormal data",
     }
     ```
-  - Data available at: [Download Instrument data](https://cdn.nuwe.io/challenges-ds-datasets/hackathon-schneider-pollutant/instrument_data.csv.zip)
+  - Data available at: [Download Instrument data](https://cdn.nuwe.io/challenges-ds-datasets/hackathon-schneider-pollutant/instrument_data.zip)
 
 - Pollutant data
  - Variables:
@@ -115,15 +115,15 @@ This challenge will include three tasks: an initial exploratory data analysis ta
 
 **IMPORTANT** Answer the following questions considering only measurements with the value tagged as "Normal" (code 0):
 
-  - **Q1:**  Average daily SO2 concentration across all districts over the entire period. Give the station average. Provide the answer with 5 decimals.
+  - **Q1:** Average daily SO2 concentration across all districts over the entire period. Give the station average. Provide the answer with 5 decimals.
   - **Q2:** Analyse how pollution levels vary by season. Return the average levels of CO per season at the station 209. (Take the whole month of December as part of winter, March as spring, and so on.) Provide the answer with 5 decimals.
   - **Q3:** Which hour presents the highest variability (Standard Deviation) for the pollutant O3? Treat all stations as equal. 
   - **Q4:** Which is the station code with more measurements labeled as "Abnormal data"? 
   - **Q5:** Which station code has more "not normal" measurements (!= 0)?
-  - **Q6:** Return the count of Good, Normal, Bad and Very bad records for all the station codes of PM2.5 pollutant.
+  - **Q6:** Return the count of `Good`, `Normal`, `Bad` and `Very bad` records for all the station codes of PM2.5 pollutant.
  
 
-Question output format:
+Example question output format:
 ```json
 {"target":
   {
@@ -218,26 +218,22 @@ Example output:
 ```
 
 ### 💫 Guides
-Study and explore the datasets thoroughly.
-
-Handle missing or erroneous values.
-
-Normalize and scale data.
-
-Implement feature engineering to improve model accuracy.
-
+- Study and explore the datasets thoroughly.
+- Handle missing or erroneous values.
+- Normalize and scale the data.
+- Implement feature engineering to improve model accuracy.
 
 
 
 ## 📤 Submission
 
-Submit a `questions.json` file for the queries in task 1 and a `predictions_task_2.json` and `predictions_task_3.json` files containing the predictions made by your models. Ensure the file is formatted correctly.
+Submit a `questions.json` file for the queries in task 1 and a `predictions_task_2.json` and `predictions_task_3.json` files containing the predictions made by your models. Ensure the files are formatted correctly and placed within the `/predictions` folder.
 
 
 ## 📊 Evaluation
 - **Task 1:** The questions of this tasks will be evaluated via JSON file, comparing your answer in `questions.json` against the expected value.
 - **Task 2:** The model will be evaluated using R2. The score will be the mean for all the station predictions.
-- **Task 3:** The model will be evaluated using F1 score, average : macro.
+- **Task 3:** The model will be evaluated using F1 score, using the macro average.
 
 
 The grading system will be the following:
@@ -252,5 +248,4 @@ All submissions might undergo a manual code review process to ensure that the wo
 ## ❓ FAQs
 
 #### **Q1: How do I submit my solution?**
-A1: Submit your solution via Git. Once your code and predictions are ready,commit your changes to the main branch and push your repository. Your submission will be graded automatically within a few minutes. Make sure to write meaningful commit messages.
-
+A1: Submit your solution via Git. Once your code and predictions are ready, commit your changes to the main branch and push your repository. Your submission will be graded automatically within a few minutes. Make sure to write meaningful commit messages.

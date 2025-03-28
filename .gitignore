@@ -1,3 +1,6 @@
 venv/
 data/raw/measurement_data.csv
 data/raw/instrument_data.csv
+
+
+.python-version

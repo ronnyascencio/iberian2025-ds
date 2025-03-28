@@ -247,5 +247,3 @@ All submissions might undergo a manual code review process to ensure that the wo
 #### **Q1: How do I submit my solution?**
 
 A1: Submit your solution via Git. Once your code and predictions are ready, commit your changes to the main branch and push your repository. Your submission will be graded automatically within a few minutes. Make sure to write meaningful commit messages.
-
-# test Ronny

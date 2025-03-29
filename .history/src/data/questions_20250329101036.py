@@ -30,38 +30,28 @@ for the pollutant O3? Treat all stations as equal."""
 
 
 
-# Q3 
-# filter null O3 vals
-df_o3 = df[["Measurement date", "O3"]].dropna()
+# Q2
+# we use the filtered values (df)
+# we filter to get only Station code == 209 and CO pollutant
+# extract month from Measurement date (and asign to spring, autaumn etc)
 
-#get hour
-df_o3["hour"]= df_o3["Measurement date"].dt.hour
-
-#Group hours and get std deviation
-hour_std = df_o3.groupby("hour")["O3"].std()
-
-q3_result = int(hour_std.idxmax()) # get the maximum std deviation hour
-
-
-
-#Q4 Which is the station code with more measurements labeled as "Abnormal data"?
-
-# !! Abnormal data code -> 9 (Instrument status); only instrument_data has "Instrument status"
-# No need to use the merged
-
-df_abn = instrument_df[instrument_df["Instrument status"]==9]
-q4_result = df_abn["Station code"].value_counts().idxmax()
+df_co
+df_st_209 = df[df["Station code"] == 209, df[""]]
 
 
 
 
 
-#Q5: Station with more "not normal" measurements...
-# we only need instrument_data..., we filter it for "not normal"-->!=0
-df_nnorm = instrument_df[instrument_df["Instrument status"] != 0]
 
-# count how many times a station appears and gets the one with most
-q5_result = df_nnorm["Station code"].value_counts().idxmax()
+
+
+
+
+
+
+
+
+
 
 
 
@@ -95,9 +85,6 @@ q6_counts = df_pm25["quality"].value_counts().to_dict()
 # Print outputs
 print("Q1:", q1_result)
 
-print("Q3:", q3_result)
-print("Q4:", q4_result)
-print("Q5:", q5_result)
 print("Q6:", q6_counts)
 
 ### Q2 - Average CO concentration in station 209 by season

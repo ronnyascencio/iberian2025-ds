@@ -66,6 +66,18 @@ q5_result = df_nnorm["Station code"].value_counts().idxmax()
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 ### Q6 - PM2.5 classification
 # Get item code for PM2.5
 pm25_code = pollutant_df[pollutant_df["Item name"] == "PM2.5"]["Item code"].values[0]

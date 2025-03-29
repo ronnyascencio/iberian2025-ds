@@ -42,7 +42,7 @@ hour_std = df_o3.groupby("hour")["O3"].std()
 
 q3_result = int(hour_std.idxmax()) # get the maximum std deviation hour
 
-
+print("Q3:", q3_result)
 
 #Q4 Which is the station code with more measurements labeled as "Abnormal data"?
 
@@ -51,17 +51,28 @@ q3_result = int(hour_std.idxmax()) # get the maximum std deviation hour
 
 df_abn = instrument_df[instrument_df["Instrument status"]==9]
 q4_result = df_abn["Station code"].value_counts().idxmax()
-
+print("Q4:", q4_result)
 
 
 
 
 #Q5: Station with more "not normal" measurements...
 # we only need instrument_data..., we filter it for "not normal"-->!=0
-df_nnorm = instrument_df[instrument_df["Instrument status"] != 0]
+df_nnorm = instrument_df[instrument_df["Instrument status"] != 0].groupby("Station code")
 
-# count how many times a station appears and gets the one with most
-q5_result = df_nnorm["Station code"].value_counts().idxmax()
+q5_result = df_nnorm["Station code"].value_counts.idxmax()
+print()
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -95,9 +106,6 @@ q6_counts = df_pm25["quality"].value_counts().to_dict()
 # Print outputs
 print("Q1:", q1_result)
 
-print("Q3:", q3_result)
-print("Q4:", q4_result)
-print("Q5:", q5_result)
 print("Q6:", q6_counts)
 
 ### Q2 - Average CO concentration in station 209 by season

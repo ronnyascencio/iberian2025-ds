@@ -42,7 +42,7 @@ hour_std = df_o3.groupby("hour")["O3"].std()
 
 q3_result = int(hour_std.idxmax()) # get the maximum std deviation hour
 
-
+print("Q3:", q3_result)
 
 #Q4 Which is the station code with more measurements labeled as "Abnormal data"?
 
@@ -51,7 +51,7 @@ q3_result = int(hour_std.idxmax()) # get the maximum std deviation hour
 
 df_abn = instrument_df[instrument_df["Instrument status"]==9]
 q4_result = df_abn["Station code"].value_counts().idxmax()
-
+¡
 
 
 
@@ -62,6 +62,18 @@ df_nnorm = instrument_df[instrument_df["Instrument status"] != 0]
 
 # count how many times a station appears and gets the one with most
 q5_result = df_nnorm["Station code"].value_counts().idxmax()
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

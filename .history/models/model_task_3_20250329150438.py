@@ -62,13 +62,14 @@ print(input_preparer("Station code: 209 | pollutant: NO2  | Period: 2023-09-01 0
 
 def data_filter(StatCode, ItCode, end_date, start_date):
     # filter for each station code:
-
+    """filter1=merged_df[merged_df["Station code"] == StatCode]
+    filter2= ... hay que corregir esto"""
     return merged_df[
-    (merged_df["Station code"] == StatCode) &
-    (merged_df["Item code"] == ItCode) &
-    (merged_df["Measurement date"] >= start_date) &
-    (merged_df["Measurement date"] <= end_date)
-]
+        (merged_df["Station code"] == StatCode) &
+        (merged_df["Item code"] == ItCode) &
+        (merged_df["Measurement date"] >= start_date) &
+        (merged_df["Measurement date"] <= end_date)
+    ]
 
 
 def machine_learning(df_filtered):

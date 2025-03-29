@@ -38,7 +38,7 @@ input_list = [ "Station code: 205 | pollutant: SO2  | Period: 2023-11-01 00:00:0
 "Station code: 224 | pollutant: CO  | Period: 2023-10-01 00:00:00 - 2023-10-31 23:00:00",
 "Station code: 226 | pollutant: PM10 | Period: 2023-08-01 00:00:00 - 2023-08-31 23:00:00",
 "Station code: 227 | pollutant: PM2.5 | Period: 2023-12-01 00:00:00 - 2023-12-31 23:00:00",
-]
+""]
 
 
 
@@ -60,35 +60,26 @@ def input_preparer(line, pollutant_data):
 print(input_preparer("Station code: 209 | pollutant: NO2  | Period: 2023-09-01 00:00:00 - 2023-09-30 23:00:00", pollutant_df))
 
 
-def data_filter(StatCode, ItCode, end_date, start_date):
-    # filter for each station code:
-
-    return merged_df[
-    (merged_df["Station code"] == StatCode) &
-    (merged_df["Item code"] == ItCode) &
-    (merged_df["Measurement date"] >= start_date) &
-    (merged_df["Measurement date"] <= end_date)
-]
-
-
-def machine_learning(df_filtered):
-    df_filtered["hour"] = df_filtered["Measurement date"].dt.hour
-    df_filtered["dayofweek"] = df_filtered["Measurement date"].dt.dayofweek
-
-    X = df_filtered[["Average value", "hour", "dayofweek"]]
-    y = df_filtered["Instrument status"]
-
-    model = RandomForestClassifier()
-    model.fit(X, y)
-    print("Modelo con ", len(X), "instancias")
-
-    return
-
-
-
-
-for each in input_list:
-    station_code, pollutant_code, start_date, end_date = input_preparer(each, pollutant_df)
+raularmasserina@air-de-raul iberian2025-ds % /usr/local/bin/python3 /Users/raularmasserina/Desktop/HAC
+KATHON/iberian2025-ds/models/model_task_3.py
+(209, np.int64(2), Timestamp('2023-09-01 00:00:00'), Timestamp('2023-09-30 23:00:00'))
+Traceback (most recent call last):
+  File "/Users/raularmasserina/Desktop/HACKATHON/iberian2025-ds/models/model_task_3.py", line 93, in <module>
     df_filtered = data_filter(station_code, pollutant_code, start_date, end_date)
-    machine_learning(df_filtered)
-
+  File "/Users/raularmasserina/Desktop/HACKATHON/iberian2025-ds/models/model_task_3.py", line 69, in data_filter
+    return ((merged_df[merged_df["Station code"] == StatCode]) & 
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/pandas/core/ops/common.py", line 76, in new_method
+    return method(self, other)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/pandas/core/arraylike.py", line 70, in __and__
+    return self._logical_method(other, operator.and_)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/pandas/core/frame.py", line 7913, in _arith_method
+    new_data = self._dispatch_frame_op(other, op, axis=axis)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/pandas/core/frame.py", line 7956, in _dispatch_frame_op
+    bm = self._mgr.operate_blockwise(
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/pandas/core/internals/managers.py", line 1511, in operate_blockwise
+    return operate_blockwise(self, other, array_op)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/pandas/core/internals/ops.py", line 65, in operate_blockwise
+    res_values = array_op(lvals, rvals)
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/site-packages/pandas/core/ops/array_ops.py", line 442, in logical_op
+    res_values = op(lvalues, rvalues)
+TypeError: unsupported operand type(s) for &: 'DatetimeArray' and 'DatetimeArray'

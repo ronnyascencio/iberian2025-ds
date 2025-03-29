@@ -60,35 +60,3 @@ def input_preparer(line, pollutant_data):
 print(input_preparer("Station code: 209 | pollutant: NO2  | Period: 2023-09-01 00:00:00 - 2023-09-30 23:00:00", pollutant_df))
 
 
-def data_filter(StatCode, ItCode, end_date, start_date):
-    # filter for each station code:
-
-    return merged_df[
-    (merged_df["Station code"] == StatCode) &
-    (merged_df["Item code"] == ItCode) &
-    (merged_df["Measurement date"] >= start_date) &
-    (merged_df["Measurement date"] <= end_date)
-]
-
-
-def machine_learning(df_filtered):
-    df_filtered["hour"] = df_filtered["Measurement date"].dt.hour
-    df_filtered["dayofweek"] = df_filtered["Measurement date"].dt.dayofweek
-
-    X = df_filtered[["Average value", "hour", "dayofweek"]]
-    y = df_filtered["Instrument status"]
-
-    model = RandomForestClassifier()
-    model.fit(X, y)
-    print("Modelo con ", len(X), "instancias")
-
-    return
-
-
-
-
-for each in input_list:
-    station_code, pollutant_code, start_date, end_date = input_preparer(each, pollutant_df)
-    df_filtered = data_filter(station_code, pollutant_code, start_date, end_date)
-    machine_learning(df_filtered)
-

@@ -64,11 +64,11 @@ def data_filter(StatCode, ItCode, end_date, start_date):
     # filter for each station code:
 
     return merged_df[
-    (merged_df["Station code"] == StatCode) &
-    (merged_df["Item code"] == ItCode) &
-    (merged_df["Measurement date"] >= start_date) &
-    (merged_df["Measurement date"] <= end_date)
-]
+        (merged_df["Station code"] == StatCode) &
+        (merged_df["Item code"] == ItCode) &
+        (merged_df["Measurement date"] >= start_date) &
+        (merged_df["Measurement date"] <= end_date)
+    ]
 
 
 def machine_learning(df_filtered):

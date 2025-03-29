@@ -38,7 +38,7 @@ input_list = [ "Station code: 205 | pollutant: SO2  | Period: 2023-11-01 00:00:0
 "Station code: 224 | pollutant: CO  | Period: 2023-10-01 00:00:00 - 2023-10-31 23:00:00",
 "Station code: 226 | pollutant: PM10 | Period: 2023-08-01 00:00:00 - 2023-08-31 23:00:00",
 "Station code: 227 | pollutant: PM2.5 | Period: 2023-12-01 00:00:00 - 2023-12-31 23:00:00",
-]
+""]
 
 
 
@@ -49,7 +49,7 @@ def input_preparer(line, pollutant_data):
     pollutant = parts[1].split(":")[1].strip()
     start_date, end_date = parts[2].split("Period:")[1].strip().split(" - ")
 
-    pollutant_code = pollutant_data[pollutant_data["Item name"]==pollutant]["Item code"].values[0]
+    pollutant_code = intpollutant_data[pollutant_data["Item name"]==pollutant]["Item code"].values[0]
 
     start_date = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)
@@ -62,13 +62,14 @@ print(input_preparer("Station code: 209 | pollutant: NO2  | Period: 2023-09-01 0
 
 def data_filter(StatCode, ItCode, end_date, start_date):
     # filter for each station code:
+    """filter1=merged_df[merged_df["Station code"] == StatCode]
+    filter2= ... hay que corregir esto"""
 
-    return merged_df[
-    (merged_df["Station code"] == StatCode) &
-    (merged_df["Item code"] == ItCode) &
-    (merged_df["Measurement date"] >= start_date) &
-    (merged_df["Measurement date"] <= end_date)
-]
+
+    return ((merged_df[merged_df["Station code"] == StatCode]) & 
+            (merged_df[merged_df["Item code"] == ItCode]) & 
+            (merged_df["Measurement date"] <= end_date) & 
+            (merged_df["Measurement date"] >= start_date))
 
 
 def machine_learning(df_filtered):

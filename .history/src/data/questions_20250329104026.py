@@ -1,18 +1,12 @@
 import pandas as pd
 
 # Load data
-measurement_df = pd.read_csv(
-    "data/raw/measurement_data.csv", parse_dates=["Measurement date"]
-)
-instrument_df = pd.read_csv(
-    "data/raw/instrument_data.csv", parse_dates=["Measurement date"]
-)
+measurement_df = pd.read_csv("data/raw/measurement_data.csv", parse_dates=["Measurement date"])
+instrument_df = pd.read_csv("data/raw/instrument_data.csv", parse_dates=["Measurement date"])
 pollutant_df = pd.read_csv("data/raw/pollutant_data.csv")
 
 # Merge measurement and instrument data
-merged_df = pd.merge(
-    measurement_df, instrument_df, on=["Measurement date", "Station code"]
-)
+merged_df = pd.merge(measurement_df, instrument_df, on=["Measurement date", "Station code"])
 
 # Filter only 'Normal' instrument status
 df = merged_df[merged_df["Instrument status"] == 0]
@@ -23,7 +17,6 @@ df_so2["date"] = df_so2["Measurement date"].dt.date
 daily_station_avg = df_so2.groupby(["Station code", "date"])["SO2"].mean()
 station_avg = daily_station_avg.groupby("Station code").mean()
 q1_result = round(station_avg.mean(), 5)
-
 
 
 
@@ -49,7 +42,7 @@ hour_std = df_o3.groupby("hour")["O3"].std()
 
 q3_result = int(hour_std.idxmax()) # get the maximum std deviation hour
 
-
+print("Q3:", q3_result)
 
 #Q4 Which is the station code with more measurements labeled as "Abnormal data"?
 
@@ -58,17 +51,27 @@ q3_result = int(hour_std.idxmax()) # get the maximum std deviation hour
 
 df_abn = instrument_df[instrument_df["Instrument status"]==9]
 q4_result = df_abn["Station code"].value_counts().idxmax()
-
+print("Q4:", q4_result)
 
 
 
 
 #Q5: Station with more "not normal" measurements...
 # we only need instrument_data..., we filter it for "not normal"-->!=0
-df_nnorm = instrument_df[instrument_df["Instrument status"] != 0]
+df_nnorm = instrument_df[instrument_df["Instrument status"] != 0].groupby("Station code")
 
-# count how many times a station appears and gets the one with most
-q5_result = df_nnorm["Station code"].value_counts().idxmax()
+q5_result = df_nnorm["Station code"].value_counts.idmax()
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -102,11 +105,7 @@ q6_counts = df_pm25["quality"].value_counts().to_dict()
 # Print outputs
 print("Q1:", q1_result)
 
-print("Q3:", q3_result)
-print("Q4:", q4_result)
-print("Q5:", q5_result)
 print("Q6:", q6_counts)
-
 
 ### Q2 - Average CO concentration in station 209 by season
 
@@ -119,9 +118,7 @@ print("Q6:", q6_counts)
 # "normal meditions"(status=0)
 instrument_normal = instrument_df[instrument_df["Instrument status"] == 0]
 
-merged_df = pd.merge(
-    measurement_df, instrument_df, on=["Measurement date", "Station code"]
-)
+merged_df = pd.merge(measurement_df, instrument_df, on=["Measurement date", "Station code"])
 
 merged_df = merged_df[merged_df["Instrument status"] == 0]
 
@@ -148,46 +145,3 @@ result = station_209_co.groupby("season")["CO"].mean().round(5)
 
 output = {"target": {"Q2": {str(k): float(v) for k, v in result.to_dict().items()}}}
 print(f"output: {output}")
-
-
-### Q3
-
-
-### Q4
-
-
-### Q5
-
-
-### Q6 - PM2.5 classification
-# Get item code for PM2.5
-pm25_code = pollutant_df[pollutant_df["Item name"] == "PM2.5"]["Item code"].values[0]
-df_pm25 = df[df["Item code"] == pm25_code]
-
-# Get classification thresholds
-row = pollutant_df[pollutant_df["Item name"] == "PM2.5"]
-good = row["Good"].values[0]
-normal = row["Normal"].values[0]
-bad = row["Bad"].values[0]
-very_bad = row["Very bad"].values[0]
-
-
-# Classification function
-def classify_pm25(val):
-    if val <= good:
-        return "Good"
-    elif val <= normal:
-        return "Normal"
-    elif val <= bad:
-        return "Bad"
-    else:
-        return "Very bad"
-
-
-df_pm25["quality"] = df_pm25["Average value"].apply(classify_pm25)
-q6_counts = df_pm25["quality"].value_counts().to_dict()
-
-# Print outputs
-print("Q1:", q1_result)
-
-print("Q6:", q6_counts)

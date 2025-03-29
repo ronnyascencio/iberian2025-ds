@@ -1,12 +1,18 @@
 import pandas as pd
 
 # Load data
-measurement_df = pd.read_csv("data/raw/measurement_data.csv", parse_dates=["Measurement date"])
-instrument_df = pd.read_csv("data/raw/instrument_data.csv", parse_dates=["Measurement date"])
+measurement_df = pd.read_csv(
+    "data/raw/measurement_data.csv", parse_dates=["Measurement date"]
+)
+instrument_df = pd.read_csv(
+    "data/raw/instrument_data.csv", parse_dates=["Measurement date"]
+)
 pollutant_df = pd.read_csv("data/raw/pollutant_data.csv")
 
 # Merge measurement and instrument data
-merged_df = pd.merge(measurement_df, instrument_df, on=["Measurement date", "Station code"])
+merged_df = pd.merge(
+    measurement_df, instrument_df, on=["Measurement date", "Station code"]
+)
 
 # Filter only 'Normal' instrument status
 df = merged_df[merged_df["Instrument status"] == 0]
@@ -17,6 +23,7 @@ df_so2["date"] = df_so2["Measurement date"].dt.date
 daily_station_avg = df_so2.groupby(["Station code", "date"])["SO2"].mean()
 station_avg = daily_station_avg.groupby("Station code").mean()
 q1_result = round(station_avg.mean(), 5)
+
 
 
 
@@ -100,35 +107,6 @@ print("Q4:", q4_result)
 print("Q5:", q5_result)
 print("Q6:", q6_counts)
 
-""" 
-{"target":
-    {
-        "Q1": 0.00383,
-        "Q2": {
-            "1": 0.6804,
-            "2": 0.47805,
-            "3": 0.42521,
-            "4": 0.49979
-        },
-        "Q3": 21,
-        "Q4": 211,
-        "Q5": 208,
-        "Q6": {
-            "Normal": 260379,
-            "Good": 223990,
-            "Bad": 99525,
-            "Very bad": 15160
-        }
-    }
-}
-"""
-
-
-
-
-
-
-
 ### Q2 - Average CO concentration in station 209 by season
 
 # aqui tu merged_df
@@ -140,7 +118,9 @@ print("Q6:", q6_counts)
 # "normal meditions"(status=0)
 instrument_normal = instrument_df[instrument_df["Instrument status"] == 0]
 
-merged_df = pd.merge(measurement_df, instrument_df, on=["Measurement date", "Station code"])
+merged_df = pd.merge(
+    measurement_df, instrument_df, on=["Measurement date", "Station code"]
+)
 
 merged_df = merged_df[merged_df["Instrument status"] == 0]
 
@@ -167,3 +147,46 @@ result = station_209_co.groupby("season")["CO"].mean().round(5)
 
 output = {"target": {"Q2": {str(k): float(v) for k, v in result.to_dict().items()}}}
 print(f"output: {output}")
+
+
+### Q3
+
+
+### Q4
+
+
+### Q5
+
+
+### Q6 - PM2.5 classification
+# Get item code for PM2.5
+pm25_code = pollutant_df[pollutant_df["Item name"] == "PM2.5"]["Item code"].values[0]
+df_pm25 = df[df["Item code"] == pm25_code]
+
+# Get classification thresholds
+row = pollutant_df[pollutant_df["Item name"] == "PM2.5"]
+good = row["Good"].values[0]
+normal = row["Normal"].values[0]
+bad = row["Bad"].values[0]
+very_bad = row["Very bad"].values[0]
+
+
+# Classification function
+def classify_pm25(val):
+    if val <= good:
+        return "Good"
+    elif val <= normal:
+        return "Normal"
+    elif val <= bad:
+        return "Bad"
+    else:
+        return "Very bad"
+
+
+df_pm25["quality"] = df_pm25["Average value"].apply(classify_pm25)
+q6_counts = df_pm25["quality"].value_counts().to_dict()
+
+# Print outputs
+print("Q1:", q1_result)
+
+print("Q6:", q6_counts)

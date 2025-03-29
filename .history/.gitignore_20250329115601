@@ -1,0 +1,4 @@
+venv/
+*.csv
+.history/src/data
+*.python-version

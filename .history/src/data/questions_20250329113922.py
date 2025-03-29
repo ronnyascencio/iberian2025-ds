@@ -117,7 +117,7 @@ print("Q6:", q6_counts)
             "Normal": 260379,
             "Good": 223990,
             "Bad": 99525,
-            "Very bad": 15160
+            "Very bad": 111
         }
     }
 }

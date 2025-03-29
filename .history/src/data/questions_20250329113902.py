@@ -114,10 +114,10 @@ print("Q6:", q6_counts)
         "Q4": 211,
         "Q5": 208,
         "Q6": {
-            "Normal": 260379,
-            "Good": 223990,
-            "Bad": 99525,
-            "Very bad": 15160
+            "Normal": 111,
+            "Good": 111,
+            "Bad": 111,
+            "Very bad": 111
         }
     }
 }

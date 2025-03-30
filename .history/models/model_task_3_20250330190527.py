@@ -46,30 +46,9 @@ def input_preparer(line, pollutant_data):
     return station_code, pollutant_code, start_date, end_date
 
 
+station_code, pollutant_code, start_date, end_date = input_preparer("Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00", pollutant_df)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""station_code, pollutant_code, start_date, end_date = input_preparer("Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00", pollutant_df)"""
-
-"""print(station_code, pollutant_code, start_date, end_date)"""
+print(station_code, pollutant_code, start_date, end_date)
 
 """filtered_df = merged_df[
     (merged_df["Station code"] == station_code) &
@@ -104,24 +83,6 @@ def data_filter(StatCode, ItCode, start_date, end_date):
     print(merged_df["Station code"].dtype, merged_df["Item code"].dtype)
 
     print("\n\n------------------------------\n\n")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
 
 
 """ test_df = merged_df[

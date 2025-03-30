@@ -11,8 +11,6 @@ pollutant_df = pd.read_csv("data/raw/pollutant_data.csv")
 
 # Fusionar datos de medición e instrumento
 merged_df = pd.merge(measurement_df, instrument_df, on=["Measurement date", "Station code"])
-print("Fechas únicas en merged_df:")
-print(merged_df["Measurement date"].unique())
 print(merged_df.columns)
 # Preparar entradas
 input_list = [
@@ -46,115 +44,25 @@ def input_preparer(line, pollutant_data):
     return station_code, pollutant_code, start_date, end_date
 
 
+station_code, pollutant_code, start_date, end_date = input_preparer("Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00", pollutant_df)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""station_code, pollutant_code, start_date, end_date = input_preparer("Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00", pollutant_df)"""
-
-"""print(station_code, pollutant_code, start_date, end_date)"""
-
-"""filtered_df = merged_df[
-    (merged_df["Station code"] == station_code) &
-    (merged_df["Item code"] == pollutant_code) 
-]
-
-print(filtered_df.head())
-print ("\n\n date??\n\n")
-print(merged_df["Measurement date"])
-
-print ("\n\n original date??\n\n")
-# Verifica las fechas en los datos originales
-print(measurement_df["Measurement date"].unique())
-print(instrument_df["Measurement date"].unique())
-
-if filtered_df.empty:
-    print("No se encontraron datos para los criterios especificados.")
-else:
-    print(f"Datos filtrados: {len(filtered_df)} filas.")
-"""
-
-
+print(station_code, pollutant_code, start_date, end_date)
 
 
 def data_filter(StatCode, ItCode, start_date, end_date):
-    print("Filtrando con:")
-    print(f"  Estación: {StatCode}")
-    print(f"  Contaminante (código): {ItCode}")
-    print(f"  Fechas: {start_date} -> {end_date}")
-    print("Tipos:")
-    print(type(StatCode), type(ItCode))
-    print(merged_df["Station code"].dtype, merged_df["Item code"].dtype)
-
-    print("\n\n------------------------------\n\n")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
-""" test_df = merged_df[
-(merged_df["Station code"] == 205) &
-(merged_df["Item code"] == 0)
-]
-print(test_df["Measurement date"].min(), "->", test_df["Measurement date"].max())
-print(test_df.tail(5))"""
-
-   
-"""    filtered_data = merged_df[
+    filtered_data = merged_df[
         (merged_df["Station code"] == StatCode) &
         (merged_df["Item code"] == ItCode) &
         (merged_df["Measurement date"] >= start_date) &
-        (merged_df["Measurement date"] <= end_date)]"""
+        (merged_df["Measurement date"] <= end_date)
+    ]
     
-"""   print("\n\n------\n\n")
-print("Fechas mín y máx en merged_df:", merged_df["Measurement date"].min(), "->", merged_df["Measurement date"].max())
-print("Estaciones únicas:", merged_df["Station code"].unique())
-print("Contaminantes únicos:", merged_df["Item code"].unique())"""
-    
-    
-"""  # Verificar si hay datos después del filtrado
+    # Verificar si hay datos después del filtrado
     if filtered_data.empty:
         print(f"¡ADVERTENCIA! No hay datos para: Estación {StatCode}, Contaminante {ItCode}, Periodo {start_date} - {end_date}")
     
-    return filtered_data"""
+    return filtered_data
 
-"""df_filtered = data_filter(station_code, pollutant_code, start_date, end_date)
-print(df_filtered.head())
-print(f"Filas filtradas: {len(df_filtered)}")"""
-
-"""
 def prepare_features(df):
     # Crear características temporales
     df_features = df.copy()
@@ -265,4 +173,3 @@ for (station, pollutant), result in results.items():
         print("      * No se encontraron anomalías")
     print()
 
-"""

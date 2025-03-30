@@ -46,30 +46,9 @@ def input_preparer(line, pollutant_data):
     return station_code, pollutant_code, start_date, end_date
 
 
+station_code, pollutant_code, start_date, end_date = input_preparer("Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00", pollutant_df)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-"""station_code, pollutant_code, start_date, end_date = input_preparer("Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00", pollutant_df)"""
-
-"""print(station_code, pollutant_code, start_date, end_date)"""
+print(station_code, pollutant_code, start_date, end_date)
 
 """filtered_df = merged_df[
     (merged_df["Station code"] == station_code) &
@@ -106,24 +85,6 @@ def data_filter(StatCode, ItCode, start_date, end_date):
     print("\n\n------------------------------\n\n")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
 """ test_df = merged_df[
 (merged_df["Station code"] == 205) &
 (merged_df["Item code"] == 0)
@@ -150,9 +111,9 @@ print("Contaminantes únicos:", merged_df["Item code"].unique())"""
     
     return filtered_data"""
 
-"""df_filtered = data_filter(station_code, pollutant_code, start_date, end_date)
+df_filtered = data_filter(station_code, pollutant_code, start_date, end_date)
 print(df_filtered.head())
-print(f"Filas filtradas: {len(df_filtered)}")"""
+print(f"Filas filtradas: {len(df_filtered)}")
 
 """
 def prepare_features(df):

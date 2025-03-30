@@ -106,24 +106,6 @@ def data_filter(StatCode, ItCode, start_date, end_date):
     print("\n\n------------------------------\n\n")
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-
-
 """ test_df = merged_df[
 (merged_df["Station code"] == 205) &
 (merged_df["Item code"] == 0)

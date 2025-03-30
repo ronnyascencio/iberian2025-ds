@@ -27,7 +27,8 @@ for target in targets:
     station_code = target["station"]
     pollutant = target["pollutant"]
     start_date = target["start"]
-    end_date = target["end"]
+    end_date = pd.to_datetime(target["end"]).replace(hour=23, minute=0, second=0)
+    end_date = end_date.strftime("%Y-%m-%d %H:%M:%S")
 
     # data filtering
     df = measurement[(measurement["Station code"] == station_code)][

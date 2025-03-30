@@ -1,4 +1,5 @@
-
+<<<<<<< HEAD
+=======
 """Task 3: Detect anomalies in data measurements
 Detect instrument anomalies for the following stations and periods:
 
@@ -18,17 +19,21 @@ Station code: 227 | pollutant: PM2.5
 | Period: 2023-12-01 00:00:00 - 2023-12-31 23:00:00
 """
 
+>>>>>>> a991793cfea587a9c9042e0ef8ba04611c2809af
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
-
+<<<<<<< HEAD
+# Cargar datos
+=======
 
 
 
 # load measurement data
+>>>>>>> a991793cfea587a9c9042e0ef8ba04611c2809af
 measurement_df = pd.read_csv("data/raw/measurement_data.csv", parse_dates=["Measurement date"])
 instrument_df = pd.read_csv("data/raw/instrument_data.csv", parse_dates=["Measurement date"])
 pollutant_df = pd.read_csv("data/raw/pollutant_data.csv")
@@ -54,7 +59,7 @@ def input_preparer(line, pollutant_data):
     station_code = int(parts[0].split(":")[1].strip())
     pollutant = parts[1].split(":")[1].strip()
     start_date, end_date = parts[2].split("Period:")[1].strip().split(" - ")
-
+<<<<<<< HEAD
     
     # Buscar el código de contaminante y manejar posibles errores
     matching_pollutants = pollutant_data[pollutant_data["Item name"] == pollutant.strip()]
@@ -74,7 +79,14 @@ def input_preparer(line, pollutant_data):
 
 
 
+    Args:
+        merged_df: DataFrame with merged measurement and instrument data
+        StatCode: Station code to filter
+        ItCode: Item (pollutant) code to filter
+        end_date: End date of the period
+        start_date: Start date of the period
 
+<<<<<<< HEAD
 
 
 

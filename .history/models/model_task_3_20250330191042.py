@@ -1,4 +1,5 @@
-
+<<<<<<< HEAD
+=======
 """Task 3: Detect anomalies in data measurements
 Detect instrument anomalies for the following stations and periods:
 
@@ -18,6 +19,7 @@ Station code: 227 | pollutant: PM2.5
 | Period: 2023-12-01 00:00:00 - 2023-12-31 23:00:00
 """
 
+>>>>>>> a991793cfea587a9c9042e0ef8ba04611c2809af
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
@@ -29,6 +31,7 @@ from sklearn.metrics import classification_report
 
 
 # load measurement data
+>>>>>>> a991793cfea587a9c9042e0ef8ba04611c2809af
 measurement_df = pd.read_csv("data/raw/measurement_data.csv", parse_dates=["Measurement date"])
 instrument_df = pd.read_csv("data/raw/instrument_data.csv", parse_dates=["Measurement date"])
 pollutant_df = pd.read_csv("data/raw/pollutant_data.csv")

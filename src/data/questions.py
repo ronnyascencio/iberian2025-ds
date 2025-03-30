@@ -21,6 +21,12 @@ merged_df = pd.merge(
 )
 merged_df.dropna(inplace=True)
 
+
+# Let's try to normalize the data:
+# Normalize pollutant using Min-Max scaling
+for col in ['SO2', 'NO2', 'O3', 'CO', 'PM10', 'PM2.5']:
+    merged_df[col] = (merged_df[col] - merged_df[col].min()) / (merged_df[col].max() - merged_df[col].min())
+
 """
 Second part: Answering questions.
 """
@@ -29,10 +35,31 @@ Second part: Answering questions.
 results = {}
 
 """Q1 - Average daily SO2 concentration across all districts"""
+### Raul
+def q1_daily_explicit(df):
+    merged_data = df.copy()
+    # Paso 1: Calcular los promedios diarios de SO₂ por estación
+    daily_station_avg = merged_data.groupby(["Station code", "Measurement date"])["SO2"].mean()
+
+    # Paso 2: Calcular el promedio de los promedios diarios para cada estación
+    station_daily_avg = daily_station_avg.groupby("Station code").mean()
+
+    # Paso 3: Calcular el promedio general entre todas las estaciones
+    overall_daily_avg_so2 = station_daily_avg.mean()
+
+    # Redondear a 5 decimales
+    return round(overall_daily_avg_so2, 5)
+
 ### Ronald
-daily_station_avg = merged_df.groupby('Station code')['SO2'].mean().mean()
-q1_result = round(daily_station_avg, 5)
-results["Q1"] = float(q1_result)
+def q1_daily_implicit(df):
+    merged_data = df.copy()
+    daily_station_avg = merged_data.groupby('Station code')['SO2'].mean().mean()
+    q1_result = round(daily_station_avg, 5)
+    return float(q1_result)
+
+q1_result = q1_daily_implicit(merged_df)
+results["Q1"] = q1_result
+
 
 
 """Q2 - Average CO concentration in station 209 by season"""
@@ -105,37 +132,36 @@ results["Q5"] = q5_result
 
 
 """Q6 - PM2.5 classification"""
-### Ronald
-def classify_pm25_levels(row, thresholds):
-    """Classify PM2.5 levels based on thresholds."""
-    if row['PM2.5'] <= thresholds['Good']:
-        return 'Good'
-    elif row['PM2.5'] <= thresholds['Normal']:
-        return 'Normal'
-    elif row['PM2.5'] <= thresholds['Bad']:
-        return 'Bad'
+### Raul
+# Get item code for PM2.5
+pm25_code = pollutant_df[pollutant_df["Item name"] == "PM2.5"]["Item code"].values[0]
+df_pm25 = merged_df[merged_df["Item code"] == pm25_code]
+
+# Get classification thresholds
+row = pollutant_df[pollutant_df["Item name"] == "PM2.5"]
+good = row["Good"].values[0]
+normal = row["Normal"].values[0]
+bad = row["Bad"].values[0]
+very_bad = row["Very bad"].values[0]
+
+
+# Classification function
+def classify_pm25(val):
+    if val <= good:
+        return "Good"
+    elif val <= normal:
+        return "Normal"
+    elif val <= bad:
+        return "Bad"
     else:
-        return 'Very bad'
+        return "Very bad"
 
 
-# Step 1: Extract PM2.5 thresholds from pollutant_data
-pm25_thresholds = pollutant_df[pollutant_df['Item name'] == "PM2.5"].iloc[0]
-thresholds = {
-    'Good': pm25_thresholds['Good'],
-    'Normal': pm25_thresholds['Normal'],
-    'Bad': pm25_thresholds['Bad'],
-    'Very bad': pm25_thresholds['Very bad']
-}
-
-# Step 2: Classify PM2.5 levels in measurement_data
-measurement_data = measurement_df.copy()
-measurement_data['PM2.5 Status'] = measurement_data.apply(classify_pm25_levels, axis=1, thresholds=thresholds)
-
-# Step 3: Count occurrences of each status
-pm25_status_counts = measurement_data['PM2.5 Status'].value_counts().to_dict()
+df_pm25["quality"] = df_pm25["Average value"].apply(classify_pm25)
+q6_counts = df_pm25["quality"].value_counts().to_dict()
 
 # Step 4: Format results for Q6
-results["Q6"] = {status: int(count) for status, count in pm25_status_counts.items()}
+results["Q6"] = q6_counts
 
 """
 Save results to JSON file

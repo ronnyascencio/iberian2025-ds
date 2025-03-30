@@ -103,11 +103,16 @@ def classification_forecast(filtered_df: pd.DataFrame, start_date: pd.Timestamp,
     y_test_mapped = y_test.map(class_mapping)
 
     # Train model
-    model = XGBClassifier(
-        objective='multi:softmax',
-        num_class=len(unique_classes),
-        random_state=42
-    )
+    # model = XGBClassifier(
+    #     objective='multi:softmax',
+    #     num_class=len(unique_classes),
+    #     random_state=42
+    # )
+    # model.fit(X_train, y_train_mapped)
+    import pickle
+    with open('models/xgboost_model_task3.pickle', "rb") as file:
+        model = pickle.load(file)
+
     model.fit(X_train, y_train_mapped)
 
     # Initialize future values using the last known values

@@ -25,7 +25,9 @@ merged_df.dropna(inplace=True)
 # Let's try to normalize the data:
 # Normalize pollutant using Min-Max scaling
 for col in ['SO2', 'NO2', 'O3', 'CO', 'PM10', 'PM2.5']:
-    merged_df[col] = (merged_df[col] - merged_df[col].min()) / (merged_df[col].max() - merged_df[col].min())
+    mean = merged_df[col].mean()
+    std = merged_df[col].std()
+    merged_df[col] = (merged_df[col] - mean) / std
 
 """
 Second part: Answering questions.
@@ -57,8 +59,9 @@ def q1_daily_implicit(df):
     q1_result = round(daily_station_avg, 5)
     return float(q1_result)
 
-q1_result = q1_daily_implicit(merged_df)
-results["Q1"] = q1_result
+q1_result_ex = q1_daily_explicit(merged_df)
+q1_result_im = q1_daily_implicit(merged_df)
+results["Q1"] = q1_result_im
 
 
 

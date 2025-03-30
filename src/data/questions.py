@@ -29,10 +29,9 @@ Second part: Answering questions.
 results = {}
 
 """Q1 - Average daily SO2 concentration across all districts"""
-### Raul
-daily_station_avg = merged_df.groupby(["Station code", "Measurement date"])["SO2"].mean()
-station_avg = daily_station_avg.groupby("Station code").mean()
-q1_result = round(station_avg, 5)
+### Ronald
+daily_station_avg = merged_df.groupby('Station code')['SO2'].mean().mean()
+q1_result = round(daily_station_avg, 5)
 results["Q1"] = float(q1_result)
 
 

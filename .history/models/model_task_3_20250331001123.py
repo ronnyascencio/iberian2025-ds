@@ -217,10 +217,11 @@ def train_anomaly_detector(df_filtered):
         y_pred_xgb = model.predict(X_test)
         print("Tiempo de entrenamiento: {:.2f} segundos".format(time.time() - start_time))
         y_pred = model.predict(X_test)
+        print("Reporte de clasificación:")
         
 
-        # print("Reporte de clasificación (XGBoost):")
-        # print(classification_report(y_test, y_pred_xgb))
+        print("Reporte de clasificación (XGBoost):")
+        print(classification_report(y_test, y_pred_xgb))
 
         # Mostrar clases originales más difíciles de predecir
         original_preds = le.inverse_transform(y_pred_xgb)
@@ -266,11 +267,7 @@ def train_anomaly_detector(df_filtered):
             y_bin = (y_train == clase).astype(int)
             model_bin = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
             model_bin.fit(X_train, y_bin)
-
-            y_test_bin = (y_test == clase).astype(int)
-            y_pred_bin = model_bin.predict(X_test)
-            print("Reporte de clasificación (modelo binario XGBoost):")
-            print(classification_report(y_test_bin, y_pred_bin))
+            importances = model_bin.feature_importances_
 
             for name, importance in zip(X.columns, importances):
                 print(f"{name}: {importance:.4f}")
@@ -284,3 +281,13 @@ def train_anomaly_detector(df_filtered):
 
 
 train_anomaly_detector(merged_df)
+
+
+
+
+
+
+
+
+
+

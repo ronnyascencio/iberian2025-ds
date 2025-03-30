@@ -205,7 +205,7 @@ def train_anomaly_detector(df_filtered):
         print(classification_report(y_test, y_pred_lgbm))"""
 
         print("\n=== ENTRENANDO XGBOOST ===")
-        model = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
+        model = XGBClassifier(n_estimators=50, use_label_encoder=False, eval_metric='logloss', random_state=42)
         #vamos a intentar balancear la clase...
         sample_weight = compute_sample_weight(class_weight='balanced', y=y_train)
 
@@ -217,10 +217,11 @@ def train_anomaly_detector(df_filtered):
         y_pred_xgb = model.predict(X_test)
         print("Tiempo de entrenamiento: {:.2f} segundos".format(time.time() - start_time))
         y_pred = model.predict(X_test)
+        print("Reporte de clasificación:")
         
 
-        # print("Reporte de clasificación (XGBoost):")
-        # print(classification_report(y_test, y_pred_xgb))
+        print("Reporte de clasificación (XGBoost):")
+        print(classification_report(y_test, y_pred_xgb))
 
         # Mostrar clases originales más difíciles de predecir
         original_preds = le.inverse_transform(y_pred_xgb)
@@ -264,13 +265,9 @@ def train_anomaly_detector(df_filtered):
 
             print(f"\n--- Modelo para clase {le.inverse_transform([clase])[0]} vs resto ---")
             y_bin = (y_train == clase).astype(int)
-            model_bin = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
+            model_bin = XGBClassifier(n_estimators=50, use_label_encoder=False, eval_metric='logloss', random_state=42)
             model_bin.fit(X_train, y_bin)
-
-            y_test_bin = (y_test == clase).astype(int)
-            y_pred_bin = model_bin.predict(X_test)
-            print("Reporte de clasificación (modelo binario XGBoost):")
-            print(classification_report(y_test_bin, y_pred_bin))
+            importances = model_bin.feature_importances_
 
             for name, importance in zip(X.columns, importances):
                 print(f"{name}: {importance:.4f}")
@@ -284,3 +281,42 @@ def train_anomaly_detector(df_filtered):
 
 
 train_anomaly_detector(merged_df)
+
+
+
+
+
+
+
+
+
+
+""" test_df = merged_df[
+(merged_df["Station code"] == 205) &
+(merged_df["Item code"] == 0)
+]
+print(test_df["Measurement date"].min(), "->", test_df["Measurement date"].max())
+print(test_df.tail(5))"""
+
+   
+"""    filtered_data = merged_df[
+        (merged_df["Station code"] == StatCode) &
+        (merged_df["Item code"] == ItCode) &
+        (merged_df["Measurement date"] >= start_date) &
+        (merged_df["Measurement date"] <= end_date)]"""
+    
+"""   print("\n\n------\n\n")
+print("Fechas mín y máx en merged_df:", merged_df["Measurement date"].min(), "->", merged_df["Measurement date"].max())
+print("Estaciones únicas:", merged_df["Station code"].unique())
+print("Contaminantes únicos:", merged_df["Item code"].unique())"""
+    
+    
+"""  # Verificar si hay datos después del filtrado
+    if filtered_data.empty:
+        print(f"¡ADVERTENCIA! No hay datos para: Estación {StatCode}, Contaminante {ItCode}, Periodo {start_date} - {end_date}")
+    
+    return filtered_data"""
+
+"""df_filtered = data_filter(station_code, pollutant_code, start_date, end_date)
+print(df_filtered.head())
+print(f"Filas filtradas: {len(df_filtered)}")"""

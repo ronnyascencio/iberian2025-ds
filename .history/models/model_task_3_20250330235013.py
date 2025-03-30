@@ -27,8 +27,6 @@ import time
 from lightgbm import LGBMClassifier
 from xgboost import XGBClassifier
 from sklearn.preprocessing import LabelEncoder
-from sklearn.utils.class_weight import compute_sample_weight
-
 
 
 
@@ -148,7 +146,7 @@ def train_anomaly_detector(df_filtered):
     # pollutant code no da casi nada, station code tampoco
 
 
-    features = ["Average value", "CO", "PM10", "rolling_std_10h","SO2","PM2.5"]
+    features = ["Average value", "CO", "PM10", "rolling_mean_10h", "rolling_std_10h"]
 
     # Asegúrate de que Measurement date e Instrument status NO estén en X
     #X = df_filtered[features].fillna(0)  # Si hay NaNs
@@ -205,22 +203,17 @@ def train_anomaly_detector(df_filtered):
         print(classification_report(y_test, y_pred_lgbm))"""
 
         print("\n=== ENTRENANDO XGBOOST ===")
-        model = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
-        #vamos a intentar balancear la clase...
-        sample_weight = compute_sample_weight(class_weight='balanced', y=y_train)
-
-
-
-
+        model = XGBClassifier(n_estimators=50, use_label_encoder=False, eval_metric='logloss', random_state=42)
         start_time = time.time()
-        model.fit(X_train, y_train, sample_weight=sample_weight)
+        model.fit(X_train, y_train)
         y_pred_xgb = model.predict(X_test)
         print("Tiempo de entrenamiento: {:.2f} segundos".format(time.time() - start_time))
         y_pred = model.predict(X_test)
+        print("Reporte de clasificación:")
         
 
-        # print("Reporte de clasificación (XGBoost):")
-        # print(classification_report(y_test, y_pred_xgb))
+        print("Reporte de clasificación (XGBoost):")
+        print(classification_report(y_test, y_pred_xgb))
 
         # Mostrar clases originales más difíciles de predecir
         original_preds = le.inverse_transform(y_pred_xgb)
@@ -254,27 +247,7 @@ def train_anomaly_detector(df_filtered):
         if not anomalies.empty:
             print("\nPrimeras 5 anomalías detectadas:")
             print(anomalies[["Measurement date", "Average value", "Instrument status"]].head())
-
-        print("\n=== IMPORTANCIA DE VARIABLES POR TIPO DE FALLO ===")
-        unique_classes = np.unique(y_train)
-
-        for clase in unique_classes:
-            if clase == 0:
-                continue  # saltar clase 'normal'
-
-            print(f"\n--- Modelo para clase {le.inverse_transform([clase])[0]} vs resto ---")
-            y_bin = (y_train == clase).astype(int)
-            model_bin = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
-            model_bin.fit(X_train, y_bin)
-
-            y_test_bin = (y_test == clase).astype(int)
-            y_pred_bin = model_bin.predict(X_test)
-            print("Reporte de clasificación (modelo binario XGBoost):")
-            print(classification_report(y_test_bin, y_pred_bin))
-
-            for name, importance in zip(X.columns, importances):
-                print(f"{name}: {importance:.4f}")
-
+        
         return model, anomalies
     except ValueError as e:
         print(f"Error al dividir los datos: {e}")
@@ -284,3 +257,42 @@ def train_anomaly_detector(df_filtered):
 
 
 train_anomaly_detector(merged_df)
+
+
+
+
+
+
+
+
+
+
+""" test_df = merged_df[
+(merged_df["Station code"] == 205) &
+(merged_df["Item code"] == 0)
+]
+print(test_df["Measurement date"].min(), "->", test_df["Measurement date"].max())
+print(test_df.tail(5))"""
+
+   
+"""    filtered_data = merged_df[
+        (merged_df["Station code"] == StatCode) &
+        (merged_df["Item code"] == ItCode) &
+        (merged_df["Measurement date"] >= start_date) &
+        (merged_df["Measurement date"] <= end_date)]"""
+    
+"""   print("\n\n------\n\n")
+print("Fechas mín y máx en merged_df:", merged_df["Measurement date"].min(), "->", merged_df["Measurement date"].max())
+print("Estaciones únicas:", merged_df["Station code"].unique())
+print("Contaminantes únicos:", merged_df["Item code"].unique())"""
+    
+    
+"""  # Verificar si hay datos después del filtrado
+    if filtered_data.empty:
+        print(f"¡ADVERTENCIA! No hay datos para: Estación {StatCode}, Contaminante {ItCode}, Periodo {start_date} - {end_date}")
+    
+    return filtered_data"""
+
+"""df_filtered = data_filter(station_code, pollutant_code, start_date, end_date)
+print(df_filtered.head())
+print(f"Filas filtradas: {len(df_filtered)}")"""

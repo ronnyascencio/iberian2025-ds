@@ -23,11 +23,11 @@ merged_df.dropna(inplace=True)
 
 
 # Let's try to normalize the data:
-# Normalize pollutant using Min-Max scaling
+# Normalize pollutant levels using Robust Scaling
 for col in ['SO2', 'NO2', 'O3', 'CO', 'PM10', 'PM2.5']:
-    mean = merged_df[col].mean()
-    std = merged_df[col].std()
-    merged_df[col] = (merged_df[col] - mean) / std
+    median = merged_df[col].median()
+    iqr = merged_df[col].quantile(0.75) - merged_df[col].quantile(0.25)
+    merged_df[col] = (merged_df[col] - median) / iqr
 
 """
 Second part: Answering questions.
@@ -61,7 +61,7 @@ def q1_daily_implicit(df):
 
 q1_result_ex = q1_daily_explicit(merged_df)
 q1_result_im = q1_daily_implicit(merged_df)
-results["Q1"] = q1_result_im
+results["Q1"] = q1_result_ex
 
 
 

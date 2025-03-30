@@ -25,9 +25,10 @@ merged_df.dropna(inplace=True)
 # Let's try to normalize the data:
 # Normalize pollutant levels using Robust Scaling
 for col in ['SO2', 'NO2', 'O3', 'CO', 'PM10', 'PM2.5']:
-    median = merged_df[col].median()
-    iqr = merged_df[col].quantile(0.75) - merged_df[col].quantile(0.25)
-    merged_df[col] = (merged_df[col] - median) / iqr
+    col_min = merged_df[col].min()
+    col_max = merged_df[col].max()
+    merged_df[col] = (merged_df[col] - col_min) / (col_max - col_min)
+# Note: This only changes the output for Q1
 
 """
 Second part: Answering questions.

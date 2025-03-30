@@ -171,8 +171,8 @@ def train_anomaly_detector(df_filtered):
     # pollutant code no da casi nada, station code tampoco
 
 
-    features = ["Average value", 
-                 "rolling_std_3h", "rolling_mean_10h", "rolling_std_10h"] 
+    features = ["Average value", "longitude",
+                 "rolling_std_3h", "rolling_mean_10h","rolling_std_10h"] 
     
 
     # Asegurarse de que todas las características existen

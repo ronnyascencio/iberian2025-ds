@@ -137,8 +137,7 @@ def prepare_features(df):
     df_features["pollutant"] = df_features["Measurement date"].dt.day
     df_features["pollutant_code"] = df_features["Item code"]
     df_features["station"] = df_features["Station code"]
-    df_features["latitude"] = df_features["Latitude"]
-    df_features["longitude"] = df_features["Longitude"]
+    df_features["latitude"] = df_features["Station code"]
 
     # Características adicionales que pueden ayudar a detectar anomalías
     df_features["rolling_mean_2h"] = df_features["Average value"].rolling(window=2, min_periods=1).mean()
@@ -171,8 +170,8 @@ def train_anomaly_detector(df_filtered):
     # pollutant code no da casi nada, station code tampoco
 
 
-    features = ["Average value", 
-                 "rolling_std_3h", "rolling_mean_10h", "rolling_std_10h"] 
+    features = ["Average value", "station",
+                "rolling_mean_3h", "rolling_std_3h", "rolling_mean_10h","rolling_std_10h"] 
     
 
     # Asegurarse de que todas las características existen

@@ -1,33 +1,10 @@
-
-"""Task 3: Detect anomalies in data measurements
-Detect instrument anomalies for the following stations and periods:
-
-
-
-Station code: 205 | pollutant: SO2
- | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00
-Station code: 209 | pollutant: NO2
- | Period: 2023-09-01 00:00:00 - 2023-09-30 23:00:00
-Station code: 223 | pollutant: O3
- | Period: 2023-07-01 00:00:00 - 2023-07-31 23:00:00
-Station code: 224 | pollutant: CO
-  | Period: 2023-10-01 00:00:00 - 2023-10-31 23:00:00
-Station code: 226 | pollutant: PM10
- | Period: 2023-08-01 00:00:00 - 2023-08-31 23:00:00
-Station code: 227 | pollutant: PM2.5
-| Period: 2023-12-01 00:00:00 - 2023-12-31 23:00:00
-"""
-
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
-import time
 
-
-# load measurement data
+# Cargar datos
 measurement_df = pd.read_csv("data/raw/measurement_data.csv", parse_dates=["Measurement date"])
 instrument_df = pd.read_csv("data/raw/instrument_data.csv", parse_dates=["Measurement date"])
 pollutant_df = pd.read_csv("data/raw/pollutant_data.csv")
@@ -53,7 +30,6 @@ def input_preparer(line, pollutant_data):
     station_code = int(parts[0].split(":")[1].strip())
     pollutant = parts[1].split(":")[1].strip()
     start_date, end_date = parts[2].split("Period:")[1].strip().split(" - ")
-
     
     # Buscar el código de contaminante y manejar posibles errores
     matching_pollutants = pollutant_data[pollutant_data["Item name"] == pollutant.strip()]
@@ -70,9 +46,9 @@ def input_preparer(line, pollutant_data):
     return station_code, pollutant_code, start_date, end_date
 
 
-"""station_code, pollutant_code, start_date, end_date = input_preparer("Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00", pollutant_df)"""
+station_code, pollutant_code, start_date, end_date = input_preparer("Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00", pollutant_df)
 
-"""print(station_code, pollutant_code, start_date, end_date)"""
+print(station_code, pollutant_code, start_date, end_date)
 
 """filtered_df = merged_df[
     (merged_df["Station code"] == station_code) &
@@ -82,7 +58,6 @@ def input_preparer(line, pollutant_data):
 print(filtered_df.head())
 print ("\n\n date??\n\n")
 print(merged_df["Measurement date"])
-
 
 print ("\n\n original date??\n\n")
 # Verifica las fechas en los datos originales
@@ -94,20 +69,6 @@ if filtered_df.empty:
 else:
     print(f"Datos filtrados: {len(filtered_df)} filas.")
 """
-
-"""input_string = 
-Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00
-Station code: 209 | pollutant: NO2   | Period: 2023-09-01 00:00:00 - 2023-09-30 23:00:00
-Station code: 223 | pollutant: O3    | Period: 2023-07-01 00:00:00 - 2023-07-31 23:00:00
-Station code: 224 | pollutant: CO    | Period: 2023-10-01 00:00:00 - 2023-10-31 23:00:00
-Station code: 226 | pollutant: PM10  | Period: 2023-08-01 00:00:00 - 2023-08-31 23:00:00
-Station code: 227 | pollutant: PM2.5 | Period: 2023-12-01 00:00:00 - 2023-12-31 23:00:00
-
-
-iter_str = iter(input_string.splitlines()[1:])
-
-for line in iter_str:
-    station_code, pollutant_code, start_date, end_date = input_preparer(line, pollutant_df)"""
 
 
 
@@ -122,141 +83,35 @@ def data_filter(StatCode, ItCode, start_date, end_date):
     print(merged_df["Station code"].dtype, merged_df["Item code"].dtype)
 
     print("\n\n------------------------------\n\n")
-
-
-
-def prepare_features(df):
-
-    #Ideas: Por estaciones verano-invierno... etc ¿Ha tenido muchos errores en el pasado en esas fechas?--> debe tenerlos
-    # Crear características temporales
-    df_features = df.copy()
-    df_features["hour"] = df_features["Measurement date"].dt.hour
-    df_features["dayofweek"] = df_features["Measurement date"].dt.dayofweek
-    df_features["month"] = df_features["Measurement date"].dt.month
-    df_features["day"] = df_features["Measurement date"].dt.day
-    df_features["pollutant"] = df_features["Measurement date"].dt.day
-    df_features["pollutant_code"] = df_features["Item code"]
-    df_features["station"] = df_features["Station code"]
-    df_features["latitude"] = df_features["Latitude"]
-    df_features["longitude"] = df_features["Longitude"]
-
-    # Características adicionales que pueden ayudar a detectar anomalías
-    df_features["rolling_mean_2h"] = df_features["Average value"].rolling(window=2, min_periods=1).mean()
-    df_features["rolling_std_2h"] = df_features["Average value"].rolling(window=2, min_periods=1).std()
-
-    df_features["rolling_mean_3h"] = df_features["Average value"].rolling(window=3, min_periods=1).mean()
-    df_features["rolling_std_3h"] = df_features["Average value"].rolling(window=3, min_periods=1).std()
-
-    df_features["rolling_mean_10h"] = df_features["Average value"].rolling(window=10, min_periods=1).mean()
-    df_features["rolling_std_10h"] = df_features["Average value"].rolling(window=10, min_periods=1).std()
-    
-    # Llenar valores NaN que pueden resultar de las operaciones rolling
-    df_features = df_features.fillna(method="bfill").fillna(method="ffill")
-    
-    return df_features
-
-
-def train_anomaly_detector(df_filtered):
-
-    if df_filtered.empty:
-        print("No se puede entrenar el modelo: conjunto de datos vacío.")
-        return None
-    
-    # Preparar características
-    df_features = prepare_features(df_filtered)
-    
-    
-    # Definir características y objetivo
-    # hour y month añaden 0.02 de precision
-    # pollutant code no da casi nada, station code tampoco
-
-
-    features = ["Average value", 
-                 "rolling_std_3h", "rolling_mean_10h", "rolling_std_10h"] 
-    
-
-    # Asegurarse de que todas las características existen
-    X = df_features[[col for col in features if col in df_features.columns]]
-    df_features["is_anomaly"] = (df_features["Instrument status"] != 0).astype(int) # lo hago binario, el tipo 0 es sin anomalía
-    y = df_features["is_anomaly"]
-    
-    print(f"Entrenando modelo con {len(X)} instancias y {X.shape[1]} características")
-    
-    # Dividir datos en entrenamiento y prueba
-    try:
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-        
-        # Entrenar el modelo
-        model = RandomForestClassifier(n_estimators=10, n_jobs=-1, random_state=42)
-        start_time = time.time()
-        model.fit(X_train, y_train)
-        print("Tiempo de entrenamiento: {:.2f} segundos".format(time.time() - start_time))
-
-        importances = model.feature_importances_
-        for name, importance in zip(X.columns, importances):
-            print(f"{name}: {importance:.4f}")
-
-        # Evaluar el modelo
-        y_pred = model.predict(X_test)
-        print("Reporte de clasificación:")
-        print(classification_report(y_test, y_pred))
-        
-        # Identificar y mostrar anomalías
-        anomalies = df_features[model.predict(X) == 1]  # Suponiendo que 1 representa anomalías
-        print(f"Se encontraron {len(anomalies)} anomalías")
-        
-        if not anomalies.empty:
-            print("\nPrimeras 5 anomalías detectadas:")
-            print(anomalies[["Measurement date", "Average value", "Instrument status"]].head())
-        
-        return model, anomalies
-    except ValueError as e:
-        print(f"Error al dividir los datos: {e}")
-        if len(np.unique(y)) < 2:
-            print("El conjunto de datos tiene solo una clase. Se necesitan al menos dos clases para entrenar el modelo.")
-        return None, None
-
-
-train_anomaly_detector(merged_df)
-
-
-
-
-
-
-
-
-
-
-""" test_df = merged_df[
-(merged_df["Station code"] == 205) &
-(merged_df["Item code"] == 0)
-]
-print(test_df["Measurement date"].min(), "->", test_df["Measurement date"].max())
-print(test_df.tail(5))"""
+   """ test_df = merged_df[
+    (merged_df["Station code"] == 205) &
+    (merged_df["Item code"] == 0)
+    ]
+    print(test_df["Measurement date"].min(), "->", test_df["Measurement date"].max())
+    print(test_df.tail(5))"""
 
    
-"""    filtered_data = merged_df[
+    filtered_data = merged_df[
         (merged_df["Station code"] == StatCode) &
         (merged_df["Item code"] == ItCode) &
         (merged_df["Measurement date"] >= start_date) &
-        (merged_df["Measurement date"] <= end_date)]"""
+        (merged_df["Measurement date"] <= end_date)
+    ]
+    print("\n\n------\n\n")
+    print("Fechas mín y máx en merged_df:", merged_df["Measurement date"].min(), "->", merged_df["Measurement date"].max())
+    print("Estaciones únicas:", merged_df["Station code"].unique())
+    print("Contaminantes únicos:", merged_df["Item code"].unique())
     
-"""   print("\n\n------\n\n")
-print("Fechas mín y máx en merged_df:", merged_df["Measurement date"].min(), "->", merged_df["Measurement date"].max())
-print("Estaciones únicas:", merged_df["Station code"].unique())
-print("Contaminantes únicos:", merged_df["Item code"].unique())"""
     
-    
-"""  # Verificar si hay datos después del filtrado
+    # Verificar si hay datos después del filtrado
     if filtered_data.empty:
         print(f"¡ADVERTENCIA! No hay datos para: Estación {StatCode}, Contaminante {ItCode}, Periodo {start_date} - {end_date}")
     
-    return filtered_data"""
+    return filtered_data
 
-"""df_filtered = data_filter(station_code, pollutant_code, start_date, end_date)
+df_filtered = data_filter(station_code, pollutant_code, start_date, end_date)
 print(df_filtered.head())
-print(f"Filas filtradas: {len(df_filtered)}")"""
+print(f"Filas filtradas: {len(df_filtered)}")
 
 """
 def prepare_features(df):

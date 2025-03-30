@@ -219,8 +219,8 @@ def train_anomaly_detector(df_filtered):
         y_pred = model.predict(X_test)
         
 
-        # print("Reporte de clasificación (XGBoost):")
-        # print(classification_report(y_test, y_pred_xgb))
+        print("Reporte de clasificación (XGBoost):")
+        print(classification_report(y_test, y_pred_xgb))
 
         # Mostrar clases originales más difíciles de predecir
         original_preds = le.inverse_transform(y_pred_xgb)
@@ -266,11 +266,9 @@ def train_anomaly_detector(df_filtered):
             y_bin = (y_train == clase).astype(int)
             model_bin = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
             model_bin.fit(X_train, y_bin)
+            importances = model_bin.feature_importances_
 
-            y_test_bin = (y_test == clase).astype(int)
-            y_pred_bin = model_bin.predict(X_test)
-            print("Reporte de clasificación (modelo binario XGBoost):")
-            print(classification_report(y_test_bin, y_pred_bin))
+            
 
             for name, importance in zip(X.columns, importances):
                 print(f"{name}: {importance:.4f}")
@@ -283,36 +281,14 @@ def train_anomaly_detector(df_filtered):
         return None, None
 
 
-model, _ = train_anomaly_detector(merged_df)
+train_anomaly_detector(merged_df)
 
-print("\n=== PREDICCIÓN DE ANOMALÍAS EN LOS PERIODOS DE INPUT ===")
-for input_line in input_list:
-    print("\n" + "=" * 50)
-    print(f"Procesando: {input_line}")
-    print("=" * 50)
 
-    station_code, pollutant_code, start_date, end_date = input_preparer(input_line, pollutant_df)
-    if station_code is None:
-        continue
 
-    df_input = merged_df[
-        (merged_df["Station code"] == station_code) &
-        (merged_df["Item code"] == pollutant_code) &
-        (merged_df["Measurement date"] >= start_date) &
-        (merged_df["Measurement date"] <= end_date)
-    ]
 
-    if df_input.empty:
-        # Intentar usar todos los datos disponibles de esa estación y contaminante
-        df_input = merged_df[
-            (merged_df["Station code"] == station_code) &
-            (merged_df["Item code"] == pollutant_code)
-        ]
 
-    df_features_input = prepare_features(df_input)
-    X_input = df_features_input[[col for col in ["Average value", "CO", "PM10", "rolling_std_10h","SO2","PM2.5"] if col in df_features_input.columns]]
 
-    y_pred_input = model.predict(X_input)
-    n_anomalies = sum(pred != 0 for pred in y_pred_input)
-    print(f"Predicción: se esperan aproximadamente {n_anomalies} anomalías en el periodo analizado.")
+
+
+
 

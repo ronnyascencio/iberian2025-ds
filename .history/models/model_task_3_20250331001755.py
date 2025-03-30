@@ -283,36 +283,4 @@ def train_anomaly_detector(df_filtered):
         return None, None
 
 
-model, _ = train_anomaly_detector(merged_df)
-
-print("\n=== PREDICCIÓN DE ANOMALÍAS EN LOS PERIODOS DE INPUT ===")
-for input_line in input_list:
-    print("\n" + "=" * 50)
-    print(f"Procesando: {input_line}")
-    print("=" * 50)
-
-    station_code, pollutant_code, start_date, end_date = input_preparer(input_line, pollutant_df)
-    if station_code is None:
-        continue
-
-    df_input = merged_df[
-        (merged_df["Station code"] == station_code) &
-        (merged_df["Item code"] == pollutant_code) &
-        (merged_df["Measurement date"] >= start_date) &
-        (merged_df["Measurement date"] <= end_date)
-    ]
-
-    if df_input.empty:
-        # Intentar usar todos los datos disponibles de esa estación y contaminante
-        df_input = merged_df[
-            (merged_df["Station code"] == station_code) &
-            (merged_df["Item code"] == pollutant_code)
-        ]
-
-    df_features_input = prepare_features(df_input)
-    X_input = df_features_input[[col for col in ["Average value", "CO", "PM10", "rolling_std_10h","SO2","PM2.5"] if col in df_features_input.columns]]
-
-    y_pred_input = model.predict(X_input)
-    n_anomalies = sum(pred != 0 for pred in y_pred_input)
-    print(f"Predicción: se esperan aproximadamente {n_anomalies} anomalías en el periodo analizado.")
-
+train_anomaly_detector(merged_df)

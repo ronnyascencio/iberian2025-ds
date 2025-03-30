@@ -287,7 +287,7 @@ model, _ = train_anomaly_detector(merged_df)
 
 print("\n=== PREDICCIÓN DE ANOMALÍAS EN LOS PERIODOS DE INPUT ===")
 for input_line in input_list:
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 10)
     print(f"Procesando: {input_line}")
     print("=" * 50)
 

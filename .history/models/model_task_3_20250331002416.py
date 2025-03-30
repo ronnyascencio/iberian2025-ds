@@ -303,16 +303,14 @@ for input_line in input_list:
     ]
 
     if df_input.empty:
-        # Intentar usar todos los datos disponibles de esa estación y contaminante
-        df_input = merged_df[
-            (merged_df["Station code"] == station_code) &
-            (merged_df["Item code"] == pollutant_code)
-        ]
+        print("No se encontraron datos para esta combinación.")
+        continue
 
     df_features_input = prepare_features(df_input)
     X_input = df_features_input[[col for col in ["Average value", "CO", "PM10", "rolling_std_10h","SO2","PM2.5"] if col in df_features_input.columns]]
 
     y_pred_input = model.predict(X_input)
-    n_anomalies = sum(pred != 0 for pred in y_pred_input)
-    print(f"Predicción: se esperan aproximadamente {n_anomalies} anomalías en el periodo analizado.")
+    n_anomalies = (y_pred_input != 0).sum()
+
+    print(f"Se detectaron {n_anomalies} anomalías en el periodo.")
 

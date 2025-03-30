@@ -183,7 +183,7 @@ for line in iter_str:
     # Print forecasted instrument status
     future_status_dict = {
         index.strftime('%Y-%m-%d %H:%M:%S'): status
-        for index, status in forecasted_df['predicted_status'][forecasted_df['predicted_status'] != 0].items()
+        for index, status in forecasted_df['predicted_status'].items()
     }
     predictions[str(station_code)] = future_status_dict
 

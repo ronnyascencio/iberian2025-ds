@@ -172,7 +172,7 @@ def train_anomaly_detector(df_filtered):
 
 
     features = ["Average value", 
-                 "rolling_std_3h", "rolling_mean_10h", "rolling_std_10h"] 
+                 "rolling_std_3h", "rolling_mean_10h","rolling_std_10h"] 
     
 
     # Asegurarse de que todas las características existen

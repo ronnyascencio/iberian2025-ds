@@ -127,6 +127,7 @@ def data_filter(StatCode, ItCode, start_date, end_date):
 
 def prepare_features(df):
 
+
     #Ideas: Por estaciones verano-invierno... etc ¿Ha tenido muchos errores en el pasado en esas fechas?--> debe tenerlos
     # Crear características temporales
     df_features = df.copy()
@@ -134,21 +135,10 @@ def prepare_features(df):
     df_features["dayofweek"] = df_features["Measurement date"].dt.dayofweek
     df_features["month"] = df_features["Measurement date"].dt.month
     df_features["day"] = df_features["Measurement date"].dt.day
-    df_features["pollutant"] = df_features["Measurement date"].dt.day
-    df_features["pollutant_code"] = df_features["Item code"]
-    df_features["station"] = df_features["Station code"]
-    df_features["latitude"] = df_features["Latitude"]
-    df_features["longitude"] = df_features["Longitude"]
-
+    
     # Características adicionales que pueden ayudar a detectar anomalías
-    df_features["rolling_mean_2h"] = df_features["Average value"].rolling(window=2, min_periods=1).mean()
-    df_features["rolling_std_2h"] = df_features["Average value"].rolling(window=2, min_periods=1).std()
-
-    df_features["rolling_mean_3h"] = df_features["Average value"].rolling(window=3, min_periods=1).mean()
+    df_features["rolling_mean_3h"] = df_features["Average value"].rolling(window=6, min_periods=1).mean()
     df_features["rolling_std_3h"] = df_features["Average value"].rolling(window=3, min_periods=1).std()
-
-    df_features["rolling_mean_10h"] = df_features["Average value"].rolling(window=10, min_periods=1).mean()
-    df_features["rolling_std_10h"] = df_features["Average value"].rolling(window=10, min_periods=1).std()
     
     # Llenar valores NaN que pueden resultar de las operaciones rolling
     df_features = df_features.fillna(method="bfill").fillna(method="ffill")
@@ -165,16 +155,10 @@ def train_anomaly_detector(df_filtered):
     # Preparar características
     df_features = prepare_features(df_filtered)
     
-    
     # Definir características y objetivo
-    # hour y month añaden 0.02 de precision
-    # pollutant code no da casi nada, station code tampoco
-
-
-    features = ["Average value", 
-                 "rolling_std_3h", "rolling_mean_10h", "rolling_std_10h"] 
+    features = ["Average value", "hour", "dayofweek", "month", "day", 
+               "rolling_mean_3h", "rolling_std_3h"]
     
-
     # Asegurarse de que todas las características existen
     X = df_features[[col for col in features if col in df_features.columns]]
     df_features["is_anomaly"] = (df_features["Instrument status"] != 0).astype(int) # lo hago binario, el tipo 0 es sin anomalía
@@ -187,7 +171,7 @@ def train_anomaly_detector(df_filtered):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
         
         # Entrenar el modelo
-        model = RandomForestClassifier(n_estimators=10, n_jobs=-1, random_state=42)
+        model = RandomForestClassifier(n_estimators=50,n_jobs=-1, random_state=42)
         start_time = time.time()
         model.fit(X_train, y_train)
         print("Tiempo de entrenamiento: {:.2f} segundos".format(time.time() - start_time))

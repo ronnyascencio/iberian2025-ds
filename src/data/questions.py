@@ -1,6 +1,9 @@
 import pandas as pd
+import json
 
-# Load data
+"""
+First part: Loading data.
+"""
 measurement_df = pd.read_csv(
     "data/raw/measurement_data.csv", parse_dates=["Measurement date"]
 )
@@ -9,30 +12,32 @@ instrument_df = pd.read_csv(
 )
 pollutant_df = pd.read_csv("data/raw/pollutant_data.csv")
 
+# Filter only 'Normal' instrument status from measurment df before merging.
+filtered_instrument_df = instrument_df[instrument_df["Instrument status"] == 0]
+
 # Merge measurement and instrument data
 merged_df = pd.merge(
-    measurement_df, instrument_df, on=["Measurement date", "Station code"]
+    measurement_df, filtered_instrument_df, on=["Measurement date", "Station code"]
 )
+merged_df.dropna(inplace=True)
 
-# Filter only 'Normal' instrument status
-df = merged_df[merged_df["Instrument status"] == 0]
+"""
+Second part: Answering questions.
+"""
 
-### Q1 - Average daily SO2 concentration across all districts
-df_so2 = df[["Measurement date", "Station code", "SO2"]].dropna()
-df_so2["date"] = df_so2["Measurement date"].dt.date
-daily_station_avg = df_so2.groupby(["Station code", "date"])["SO2"].mean()
+# Create results dict:
+results = {}
+
+"""Q1 - Average daily SO2 concentration across all districts"""
+### Raul
+daily_station_avg = merged_df.groupby(["Station code", "Measurement date"])["SO2"].mean()
 station_avg = daily_station_avg.groupby("Station code").mean()
-q1_result = round(station_avg.mean(), 5)
-
-# Print outputs
-print("Q1:", q1_result)
+q1_result = round(station_avg, 5)
+results["Q1"] = float(q1_result)
 
 
-### Q2 - Average CO concentration in station 209 by season
-
-"""
-Solución de Ronny
-"""
+"""Q2 - Average CO concentration in station 209 by season"""
+### Ronny
 
 # "normal meditions"(status=0)
 instrument_normal = instrument_df[instrument_df["Instrument status"] == 0]
@@ -60,74 +65,81 @@ station_209_co["month"] = station_209_co["Measurement date"].dt.month
 station_209_co["season"] = station_209_co["month"].map(season_map)
 # debug
 result = station_209_co.groupby("season")["CO"].mean().round(5)
-q2_result = {"target": {"Q2": {str(k): float(v) for k, v in result.to_dict().items()}}}
+q2_result = {str(k): float(v) for k, v in result.to_dict().items()}
+results["Q2"] = q2_result
 
 
 
-### Q3
 """Q3: Which hour presents the highest variability (Standard Deviation)
 for the pollutant O3? Treat all stations as equal."""
-# filter null O3 vals
-df_o3 = df[["Measurement date", "O3"]].dropna()
+### Raul
 
 #get hour
-df_o3["hour"]= df_o3["Measurement date"].dt.hour
+merged_df["hour"]= merged_df["Measurement date"].dt.hour
 
 #Group hours and get std deviation
-hour_std = df_o3.groupby("hour")["O3"].std()
+hour_std = merged_df.groupby("hour")["O3"].std()
 
 q3_result = int(hour_std.idxmax()) # get the maximum std deviation hour
+results["Q3"] = q3_result
 
-### Q4 Which is the station code with more measurements labeled as "Abnormal data"?
+
+"""Q4 Which is the station code with more measurements labeled as "Abnormal data"?"""
+### Raul
 
 # !! Abnormal data code -> 9 (Instrument status); only instrument_data has "Instrument status"
 # No need to use the merged
 
 df_abn = instrument_df[instrument_df["Instrument status"]==9]
 q4_result = df_abn["Station code"].value_counts().idxmax()
+results["Q4"] = int(q4_result)
 
 
-### Q5
-#Q5: Station with more "not normal" measurements...
+"""Q5: Station with more "not normal" measurements..."""
+### Raul
 # we only need instrument_data..., we filter it for "not normal"-->!=0
 df_nnorm = instrument_df[instrument_df["Instrument status"] != 0]
 
 # count how many times a station appears and gets the one with most
-q5_result = df_nnorm["Station code"].value_counts().idxmax()
+q5_result = int(df_nnorm["Station code"].value_counts().idxmax())
+results["Q5"] = q5_result
 
 
-### Q6 - PM2.5 classification
-# Get item code for PM2.5
-pm25_code = pollutant_df[pollutant_df["Item name"] == "PM2.5"]["Item code"].values[0]
-df_pm25 = df[df["Item code"] == pm25_code]
-
-# Get classification thresholds
-row = pollutant_df[pollutant_df["Item name"] == "PM2.5"]
-good = row["Good"].values[0]
-normal = row["Normal"].values[0]
-bad = row["Bad"].values[0]
-very_bad = row["Very bad"].values[0]
-
-
-# Classification function
-def classify_pm25(val):
-    if val <= good:
-        return "Good"
-    elif val <= normal:
-        return "Normal"
-    elif val <= bad:
-        return "Bad"
+"""Q6 - PM2.5 classification"""
+### Ronald
+def classify_pm25_levels(row, thresholds):
+    """Classify PM2.5 levels based on thresholds."""
+    if row['PM2.5'] <= thresholds['Good']:
+        return 'Good'
+    elif row['PM2.5'] <= thresholds['Normal']:
+        return 'Normal'
+    elif row['PM2.5'] <= thresholds['Bad']:
+        return 'Bad'
     else:
-        return "Very bad"
+        return 'Very bad'
 
 
-df_pm25["quality"] = df_pm25["Average value"].apply(classify_pm25)
-q6_counts = df_pm25["quality"].value_counts().to_dict()
+# Step 1: Extract PM2.5 thresholds from pollutant_data
+pm25_thresholds = pollutant_df[pollutant_df['Item name'] == "PM2.5"].iloc[0]
+thresholds = {
+    'Good': pm25_thresholds['Good'],
+    'Normal': pm25_thresholds['Normal'],
+    'Bad': pm25_thresholds['Bad'],
+    'Very bad': pm25_thresholds['Very bad']
+}
 
-# Print outputs
-print("Q1:", q1_result)
-print("Q2:", q2_result)
-print("Q3:", q3_result)
-print("Q4:", q4_result)
-print("Q5:", q5_result)
-print("Q6:", q6_counts)
+# Step 2: Classify PM2.5 levels in measurement_data
+measurement_data = measurement_df.copy()
+measurement_data['PM2.5 Status'] = measurement_data.apply(classify_pm25_levels, axis=1, thresholds=thresholds)
+
+# Step 3: Count occurrences of each status
+pm25_status_counts = measurement_data['PM2.5 Status'].value_counts().to_dict()
+
+# Step 4: Format results for Q6
+results["Q6"] = {status: int(count) for status, count in pm25_status_counts.items()}
+
+"""
+Save results to JSON file
+"""
+with open('predictions/questions.json', 'w') as f:
+    json.dump({'target': results}, f, indent=4)

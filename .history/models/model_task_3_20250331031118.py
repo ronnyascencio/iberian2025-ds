@@ -155,10 +155,7 @@ def train_anomaly_detector(df_filtered):
     # pollutant code no da casi nada, station code tampoco
 
 
-    features = [
-        "avg_value", "CO", "PM10", "rolling_std_10h", "SO2", "PM2.5",
-        "avg_over_mean12h", "std12h_over_avg", "weighted_pollutant", "total_pollution"
-    ]
+    features = ["Average value", "CO", "PM10", "rolling_std_10h","SO2","PM2.5", "avg_over_mean12h", "std12h_over_avg", "weighted_pollutant", "total_pollution"]
 
     # Asegúrate de que Measurement date e Instrument status NO estén en X
     #X = df_filtered[features].fillna(0)  # Si hay NaNs
@@ -205,9 +202,9 @@ def train_anomaly_detector(df_filtered):
         anomalies = df_features[model.predict(X) == 1]  # Suponiendo que 1 representa anomalías
         print(f"Se encontraron {len(anomalies)} anomalías")
         
-        # if not anomalies.empty:
-        #     print("\nPrimeras 5 anomalías detectadas:")
-        #     print(anomalies[["Measurement date", "Average value", "Instrument status"]].head())
+        if not anomalies.empty:
+            print("\nPrimeras 5 anomalías detectadas:")
+            print(anomalies[["Measurement date", "Average value", "Instrument status"]].head())
 
         print("\n=== IMPORTANCIA DE VARIABLES POR TIPO DE FALLO ===")
         
@@ -253,11 +250,12 @@ def train_anomaly_detector(df_filtered):
             shap_sample_bin = X_test_bin.sample(min(200000, len(X_test_bin)), random_state=42)
             shap_values_bin = explainer_bin(shap_sample_bin)
 
-            # Mostrar solo la importancia promedio SHAP en consola (sin gráfico)
-            mean_shap = np.abs(shap_values_bin.values).mean(axis=0)
-            print("Importancia SHAP promedio:")
-            for name, val in zip(X_bin.columns, mean_shap):
-                print(f"{name}: {val:.4f}")
+            shap_plot_path = f"shap_summary_class_{class_error}.png"
+            if not os.path.exists(shap_plot_path):
+                shap.summary_plot(shap_values_bin, shap_sample_bin, plot_type="dot")
+                plt.gcf().set_size_inches(10, 6)
+                plt.savefig(shap_plot_path)
+                plt.clf()
 
             print(f"\n--- Modelo para clase {class_error} vs resto ---")
             print("Reporte de clasificación (modelo binario XGBoost):")
@@ -326,11 +324,7 @@ for input_line in input_list:
         ]
 
     df_features_input = prepare_features(df_input)
-    features = [
-        "avg_value", "CO", "PM10", "rolling_std_10h", "SO2", "PM2.5",
-        "avg_over_mean12h", "std12h_over_avg", "weighted_pollutant", "total_pollution"
-    ]
-    X_input = df_features_input[[col for col in features if col in df_features_input.columns]]
+    X_input = df_features_input[[col for col in ["Average value", "CO", "PM10", "rolling_std_10h","SO2","PM2.5", "avg_over_mean12h", "std12h_over_avg", "weighted_pollutant", "total_pollution"] if col in df_features_input.columns]]
 
     y_pred_input = model.predict(X_input)
     n_anomalies = sum(pred != 0 for pred in y_pred_input)

@@ -28,10 +28,9 @@ from lightgbm import LGBMClassifier
 from xgboost import XGBClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_sample_weight
-import seaborn as sns
-import matplotlib.pyplot as plt
-import shap
-import os
+
+
+
 
 # load measurement data
 measurement_df = pd.read_csv("data/raw/measurement_data.csv", parse_dates=["Measurement date"])
@@ -125,12 +124,6 @@ def prepare_features(df):
 
     df_features["rolling_mean_10h"] = df_features["Average value"].rolling(window=10, min_periods=1).mean()
     df_features["rolling_std_10h"] = df_features["Average value"].rolling(window=10, min_periods=1).std()
-
-    # Features combinadas sugeridas
-    df_features["avg_over_mean12h"] = df_features["Average value"] / (df_features["rolling_mean_12h"] + 1e-5)
-    df_features["std12h_over_avg"] = df_features["rolling_std_12h"] / (df_features["Average value"] + 1e-5)
-    df_features["weighted_pollutant"] = df_features["Average value"] * df_features["item_code"]
-    df_features["total_pollution"] = df_features["SO2"] + df_features["NO2"] + df_features["O3"] + df_features["CO"] + df_features["PM10"] + df_features["PM2.5"]
     
     # Llenar valores NaN que pueden resultar de las operaciones rolling
     df_features = df_features.bfill().ffill()
@@ -155,10 +148,7 @@ def train_anomaly_detector(df_filtered):
     # pollutant code no da casi nada, station code tampoco
 
 
-    features = [
-        "avg_value", "CO", "PM10", "rolling_std_10h", "SO2", "PM2.5",
-        "avg_over_mean12h", "std12h_over_avg", "weighted_pollutant", "total_pollution"
-    ]
+    features = ["Average value", "CO", "PM10", "rolling_std_10h","SO2","PM2.5"]
 
     # Asegúrate de que Measurement date e Instrument status NO estén en X
     #X = df_filtered[features].fillna(0)  # Si hay NaNs
@@ -205,26 +195,47 @@ def train_anomaly_detector(df_filtered):
         anomalies = df_features[model.predict(X) == 1]  # Suponiendo que 1 representa anomalías
         print(f"Se encontraron {len(anomalies)} anomalías")
         
-        # if not anomalies.empty:
-        #     print("\nPrimeras 5 anomalías detectadas:")
-        #     print(anomalies[["Measurement date", "Average value", "Instrument status"]].head())
+        if not anomalies.empty:
+            print("\nPrimeras 5 anomalías detectadas:")
+            print(anomalies[["Measurement date", "Average value", "Instrument status"]].head())
 
         print("\n=== IMPORTANCIA DE VARIABLES POR TIPO DE FALLO ===")
         
         print("\n=== EVALUACIÓN POR CLASE DE FALLO CON MODELOS BINARIOS ===")
 
-        eachfeatures = [
-            # Clase 1
-            ["station_code", "SO2", "O3", "avg_value", "month", "rolling_mean_12h", "weighted_pollutant", "total_pollution", "avg_over_mean12h", "std12h_over_avg"],
-            # Clase 2
-            ["longitude", "SO2", "item_code", "avg_value", "hour", "dayofweek", "rolling_mean_12h", "weighted_pollutant", "avg_over_mean12h", "std12h_over_avg"],
-            # Clase 4
-            ["NO2", "month", "station_code", "latitude", "longitude", "rolling_std_12h", "rolling_mean_12h", "avg_over_mean12h"],
-            # Clase 8
-            ["avg_value", "item_code", "station_code", "rolling_mean_12h", "rolling_std_12h", "O3", "SO2", "day", "weighted_pollutant", "total_pollution", "std12h_over_avg"],
-            # Clase 9
-            ["station_code", "SO2", "O3", "item_code", "avg_value", "day", "rolling_std_12h", "rolling_mean_12h", "total_pollution", "avg_over_mean12h", "weighted_pollutant"]
+
+        eachfeatures= [[
+            "station_code", "latitude", "longitude", "SO2", "NO2", "O3"
+            , "item_code", "avg_value", "hour", "dayofweek",
+            "month", "day", "pollutant_code", "station", "latitude_abs",
+            "rolling_std_12h", "rolling_mean_12h"
+        ],[
+            "station_code", "latitude", "longitude", "SO2", "NO2", "O3", "CO",
+            "PM10", "PM2.5", "item_code", "avg_value", "hour", "dayofweek",
+            "month", "day", "pollutant_code", "station", "latitude_abs",
+            "rolling_mean_2h", "rolling_std_2h", "rolling_mean_3h", "rolling_std_3h",
+            "rolling_std_12h", "rolling_mean_12h", "rolling_mean_10h", "rolling_std_10h"
+        ],[
+            "station_code", "latitude", "longitude", "SO2", "NO2", "O3", "CO",
+            "PM10", "PM2.5", "item_code", "avg_value", "hour", "dayofweek",
+            "month", "day", "pollutant_code", "station", "latitude_abs",
+            "rolling_mean_2h", "rolling_std_2h", "rolling_mean_3h", "rolling_std_3h",
+            "rolling_std_12h", "rolling_mean_12h", "rolling_mean_10h", "rolling_std_10h"
+        ],[
+            "station_code", "latitude", "longitude", "SO2", "NO2", "O3", "CO",
+            "PM10", "PM2.5", "item_code", "avg_value", "hour", "dayofweek",
+            "month", "day", "pollutant_code", "station", "latitude_abs",
+            "rolling_mean_2h", "rolling_std_2h", "rolling_mean_3h", "rolling_std_3h",
+            "rolling_std_12h", "rolling_mean_12h", "rolling_mean_10h", "rolling_std_10h"
+        ],[
+            "station_code", "latitude", "longitude", "SO2", "NO2", "O3", "CO",
+            "PM10", "PM2.5", "item_code", "avg_value", "hour", "dayofweek",
+            "month", "day", "pollutant_code", "station", "latitude_abs",
+            "rolling_mean_2h", "rolling_std_2h", "rolling_mean_3h", "rolling_std_3h",
+            "rolling_std_12h", "rolling_mean_12h", "rolling_mean_10h", "rolling_std_10h"
         ]
+        ]
+
 
         i=0
         for clase in np.unique(y_train):
@@ -241,23 +252,12 @@ def train_anomaly_detector(df_filtered):
 
             model_bin = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
 
+
+
             model_bin.fit(X_train_bin, y_train_bin)
-            explainer_bin = shap.TreeExplainer(model_bin)
-            shap_sample_bin = X_test_bin.sample(min(200000, len(X_test_bin)), random_state=42)
-            shap_values_bin = explainer_bin(shap_sample_bin)
-
             y_pred_bin = model_bin.predict(X_test_bin)
-            
-            print(f"\n=== EXPLICABILIDAD SHAP PARA CLASE {class_error} ===")
-            explainer_bin = shap.TreeExplainer(model_bin)
-            shap_sample_bin = X_test_bin.sample(min(200000, len(X_test_bin)), random_state=42)
-            shap_values_bin = explainer_bin(shap_sample_bin)
 
-            # Mostrar solo la importancia promedio SHAP en consola (sin gráfico)
-            mean_shap = np.abs(shap_values_bin.values).mean(axis=0)
-            print("Importancia SHAP promedio:")
-            for name, val in zip(X_bin.columns, mean_shap):
-                print(f"{name}: {val:.4f}")
+            
 
             print(f"\n--- Modelo para clase {class_error} vs resto ---")
             print("Reporte de clasificación (modelo binario XGBoost):")
@@ -266,28 +266,8 @@ def train_anomaly_detector(df_filtered):
             importances = model_bin.feature_importances_
             print("Importancia de características:")
             for name, importance in zip(X_bin.columns, importances):
-                print(f"{name}: {importance:.4f}")
-            i+=1
-
-        # print("\n=== MATRIZ DE CORRELACIÓN ENTRE FEATURES ===")
-        # plt.figure(figsize=(12, 10))
-        # corr = df_features.corr(numeric_only=True)
-        # sns.heatmap(corr, annot=True, fmt=".2f", cmap="coolwarm")
-        # plt.title("Matriz de correlación")
-        # plt.tight_layout()
-        # plt.show()
-
-        # print("\n=== EXPLICABILIDAD CON SHAP (modelo global) ===")
-        # explainer = shap.TreeExplainer(model)
-        # shap_sample = X_test.sample(min(200000, len(X_test)), random_state=42)
-        # shap_values = explainer(shap_sample)
-        #
-        # if not os.path.exists("shap_summary_global.png"):
-        #     shap.summary_plot(shap_values, shap_sample, plot_type="bar")
-        #     plt.gcf().set_size_inches(10, 6)
-        #     plt.savefig("shap_summary_global.png")
-        #     plt.clf()
-
+    print(f"{name}: {importance:.4f}")
+        i+=1
         return model, anomalies
     except ValueError as e:
         print(f"Error al dividir los datos: {e}")
@@ -326,11 +306,7 @@ for input_line in input_list:
         ]
 
     df_features_input = prepare_features(df_input)
-    features = [
-        "avg_value", "CO", "PM10", "rolling_std_10h", "SO2", "PM2.5",
-        "avg_over_mean12h", "std12h_over_avg", "weighted_pollutant", "total_pollution"
-    ]
-    X_input = df_features_input[[col for col in features if col in df_features_input.columns]]
+    X_input = df_features_input[[col for col in ["Average value", "CO", "PM10", "rolling_std_10h","SO2","PM2.5"] if col in df_features_input.columns]]
 
     y_pred_input = model.predict(X_input)
     n_anomalies = sum(pred != 0 for pred in y_pred_input)

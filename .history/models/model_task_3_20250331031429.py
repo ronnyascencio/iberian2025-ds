@@ -253,11 +253,12 @@ def train_anomaly_detector(df_filtered):
             shap_sample_bin = X_test_bin.sample(min(200000, len(X_test_bin)), random_state=42)
             shap_values_bin = explainer_bin(shap_sample_bin)
 
-            # Mostrar solo la importancia promedio SHAP en consola (sin gráfico)
-            mean_shap = np.abs(shap_values_bin.values).mean(axis=0)
-            print("Importancia SHAP promedio:")
-            for name, val in zip(X_bin.columns, mean_shap):
-                print(f"{name}: {val:.4f}")
+            shap_plot_path = f"shap_summary_class_{class_error}.png"
+            if not os.path.exists(shap_plot_path):
+                shap.summary_plot(shap_values_bin, shap_sample_bin, plot_type="dot")
+                plt.gcf().set_size_inches(10, 6)
+                plt.savefig(shap_plot_path)
+                plt.clf()
 
             print(f"\n--- Modelo para clase {class_error} vs resto ---")
             print("Reporte de clasificación (modelo binario XGBoost):")

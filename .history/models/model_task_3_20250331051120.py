@@ -332,33 +332,110 @@ def fit_binary_model(X_train_bin, X_test_bin, y_train_bin, grid_model_bin):
     
     return model_bin
 
+# --- Cambios para revertir GridSearchCV en modelos binarios y usar parámetros fijos ---
+
+# 1. Modificar la función prepare_binary_classification_data para quitar grid_model_bin:
 def prepare_binary_classification_data(df_features, y, eachfeatures, i, clase):
     y_bin = (y == clase).astype(int)
     X_bin = df_features[[col for col in eachfeatures[i] if col in df_features.columns]]
-
     X_train_bin, X_test_bin, y_train_bin, y_test_bin = train_test_split(X_bin, y_bin, test_size=0.3, random_state=42)
+    return X_bin, X_train_bin, X_test_bin, y_train_bin, y_test_bin
 
-    model_bin = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
-    ratio = (y_train_bin == 0).sum() / (y_train_bin == 1).sum()
-            
-    param_grid_bin = {
-                'max_depth': [2, 4],
-                'learning_rate': [0.1, 0.3],
-                'subsample': [0.8],
-                'colsample_bytree': [0.8],
-                'n_estimators': [2]
-            }
-            
-    grid_model_bin = GridSearchCV(
-                estimator=XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42),
-                param_grid=param_grid_bin,
-                scoring='f1',
-                cv=2,
-                verbose=1,
-                n_jobs=-1
-            )
+# 2. Modificar la función fit_binary_model para usar parámetros fijos:
+def fit_binary_model(X_train_bin, X_test_bin, y_train_bin):
+    model_bin = XGBClassifier(
+        use_label_encoder=False,
+        eval_metric='logloss',
+        random_state=42,
+        colsample_bytree=0.8,
+        learning_rate=0.3,
+        max_depth=4,
+        n_estimators=2,
+        subsample=0.8
+    )
+    # Calcular pesos para balancear clases
+    full_ratio = (y_train_bin == 0).sum() / (y_train_bin == 1).sum()
+    full_weights = np.where(y_train_bin == 1, full_ratio, 1)
+    model_bin.fit(X_train_bin, y_train_bin, sample_weight=full_weights)
+    return model_bin
+
+# 3. En la función train_anomaly_detector, justo después del train_test_split para el modelo global,
+# usar el modelo global con parámetros fijos sin GridSearchCV:
+try:
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+    print("\n=== ENTRENANDO XGBOOST (MODELO GLOBAL) ===")
+    model = XGBClassifier(
+        use_label_encoder=False,
+        eval_metric='logloss',
+        random_state=42,
+        colsample_bytree=0.8,
+        learning_rate=0.3,
+        max_depth=4,
+        n_estimators=2,
+        subsample=0.8
+    )
+    sample_weight = compute_sample_weight(class_weight='balanced', y=y_train)
+    model.fit(X_train, y_train, sample_weight=sample_weight)
     
-    return X_bin,X_train_bin,X_test_bin,y_train_bin,y_test_bin,grid_model_bin
+    y_pred_xgb = model.predict(X_test)
+    print("Mejores hiperparámetros (fijos): colsample_bytree=0.8, learning_rate=0.3, max_depth=4, n_estimators=2, subsample=0.8")
+    print("Tiempo de entrenamiento: {:.2f} segundos".format(time.time() - start_time))
+    
+    # Evaluación global
+    original_preds = le.inverse_transform(y_pred_xgb)
+    original_true = le.inverse_transform(y_test)
+    print("\nDistribución de clases predichas (originales):")
+    print(pd.Series(original_preds).value_counts().sort_index())
+    
+    anomalies = df_features[model.predict(X) == 1]
+    print(f"Se encontraron {len(anomalies)} anomalías")
+    
+    # 4. Evaluación por clase con modelos binarios (sin GridSearchCV)
+    print("\n=== EVALUACIÓN POR CLASE DE FALLO CON MODELOS BINARIOS ===")
+    
+    eachfeatures = [
+        # Clase 1
+        ["station_code", "SO2", "O3", "avg_value", "month", "rolling_mean_12h", "weighted_pollutant", "total_pollution", "avg_over_mean12h", "std12h_over_avg", "so2_over_co", "so2_over_pm10", "so2_deviation"],
+        # Clase 2
+        ["longitude", "SO2", "item_code", "avg_value", "hour", "dayofweek", "rolling_mean_12h", "weighted_pollutant", "avg_over_mean12h", "std12h_over_avg", "no2_over_o3", "avg_over_no2"],
+        # Clase 4
+        ["NO2", "month", "station_code", "latitude", "longitude", "rolling_std_12h", "rolling_mean_12h", "avg_over_mean12h"],
+        # Clase 8
+        ["avg_value", "item_code", "station_code", "rolling_mean_12h", "rolling_std_12h", "O3", "SO2", "day", "weighted_pollutant", "total_pollution", "std12h_over_avg"],
+        # Clase 9
+        ["station_code", "SO2", "O3", "item_code", "avg_value", "day", "rolling_std_12h", "rolling_mean_12h", "total_pollution", "avg_over_mean12h", "weighted_pollutant", "relative_deviation", "pm10_over_pm25", "item_value_product"]
+    ]
+    
+    i = 0
+    for clase in np.unique(y_train):
+        if clase == 0:
+            continue
+        class_error = le.inverse_transform([clase])[0]
+        print(f"\n=== EVALUACIÓN PARA CLASE {class_error} VS RESTO ===")
+        
+        X_bin, X_train_bin, X_test_bin, y_train_bin, y_test_bin = prepare_binary_classification_data(df_features, y, eachfeatures, i, clase)
+        
+        model_bin = fit_binary_model(X_train_bin, X_test_bin, y_train_bin)
+        
+        y_proba_bin = model_bin.predict_proba(X_test_bin)[:, 1]
+        y_pred_bin = (y_proba_bin > 0.95).astype(int)
+        
+        print("Reporte de clasificación (modelo binario XGBoost):")
+        print(classification_report(y_test_bin, y_pred_bin))
+        
+        importances = model_bin.feature_importances_
+        print("Importancia de características:")
+        for name, importance in zip(X_bin.columns, importances):
+            print(f"{name}: {importance:.4f}")
+        i += 1
+
+        return model, anomalies
+    except ValueError as e:
+        print(f"Error al dividir los datos: {e}")
+        if len(np.unique(y)) < 2:
+            print("El conjunto de datos tiene solo una clase. Se necesitan al menos dos clases para entrenar el modelo.")
+        return None, None
 
 def anomaly_detection_training(df_features, le, X, X_train, X_test, y_train, y_test, sample_weight, grid_model, sample_idx):
     # Entrenar el modelo principal con parámetros fijos

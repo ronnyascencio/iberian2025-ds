@@ -279,7 +279,7 @@ def train_anomaly_detector(df_filtered):
             print("Importancia de características:")
             for name, importance in zip(X_bin.columns, importances):
                 print(f"{name}: {importance:.4f}")
-            # print(f"Mejores hiperparámetros para el modelo binario: {grid_model_bin.best_params_}")
+            print(f"Mejores hiperparámetros para el modelo binario: {grid_model_bin.best_params_}")
             i+=1
 
             
@@ -361,35 +361,41 @@ def prepare_binary_classification_data(df_features, y, eachfeatures, i, clase):
     return X_bin,X_train_bin,X_test_bin,y_train_bin,y_test_bin,grid_model_bin
 
 def anomaly_detection_training(df_features, le, X, X_train, X_test, y_train, y_test, sample_weight, grid_model, sample_idx):
-    # Entrenar el modelo principal con parámetros fijos
-    model = XGBClassifier(
-        use_label_encoder=False,
-        eval_metric='logloss',
-        random_state=42,
-        colsample_bytree=0.8,
-        learning_rate=0.3,
-        max_depth=4,
-        n_estimators=2,
-        subsample=0.8
-    )
-    
-    model.fit(X_train, y_train, sample_weight=sample_weight)
-    
-    # Evaluar el modelo
+    # CORREGIDO: Usar indexación directa para y_train en lugar de .iloc
+    X_sample = X_train.iloc[sample_idx]  # Mantener .iloc para X_train (DataFrame)
+    y_sample = y_train[sample_idx]       # Cambiado de y_train.iloc a y_train directo
+    w_sample = sample_weight[sample_idx]
+
+        # Fit the grid search model
+    grid_model.fit(X_sample, y_sample, sample_weight=w_sample)
+
+    print(f"\nBest hyperparameters found: {grid_model.best_params_}")
+    model = grid_model.best_estimator_
+
+    start_time = time.time()
+        #model.fit(X_train, y_train, sample_weight=sample_weight)
     y_pred_xgb = model.predict(X_test)
-    
-    # Mostrar resultados
+    print("Tiempo de entrenamiento: {:.2f} segundos".format(time.time() - start_time))
+    pass  # Removed unused variables
+
+        # Mostrar clases originales más difíciles de predecir
     original_preds = le.inverse_transform(y_pred_xgb)
     original_true = le.inverse_transform(y_test)
-    
+
     print("\nDistribución de clases predichas (originales):")
     print(pd.Series(original_preds).value_counts().sort_index())
-    
-    # Identificar anomalías
-    anomalies = df_features[model.predict(X) == 1]
+
+    print("\nDistribución de clases verdaderas (originales):")
+    print(pd.Series(original_true).value_counts().sort_index())
+
+    importances = model.feature_importances_
+    for name, importance in zip(X.columns, importances):
+        print(f"{name}: {importance:.4f}")
+
+        # Identificar y mostrar anomalías
+    anomalies = df_features[model.predict(X) == 1]  # Suponiendo que 1 representa anomalías
     print(f"Se encontraron {len(anomalies)} anomalías")
-    
-    return model, anomalies
+    return model,anomalies
 
 
 model, _ = train_anomaly_detector(merged_df)

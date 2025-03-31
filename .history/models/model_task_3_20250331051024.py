@@ -332,7 +332,6 @@ def fit_binary_model(X_train_bin, X_test_bin, y_train_bin, grid_model_bin):
     
     return model_bin
 
-def prepare_binary_classification_data(df_features, y, eachfeatures, i, clase):
     y_bin = (y == clase).astype(int)
     X_bin = df_features[[col for col in eachfeatures[i] if col in df_features.columns]]
 

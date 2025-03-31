@@ -360,6 +360,8 @@ def prepare_binary_classification_data(df_features, y, eachfeatures, i, clase):
     
     return X_bin,X_train_bin,X_test_bin,y_train_bin,y_test_bin,grid_model_bin
 
+
+
 def anomaly_detection_training(df_features, le, X, X_train, X_test, y_train, y_test, sample_weight, grid_model, sample_idx):
     # Entrenar el modelo principal con parámetros fijos
     model = XGBClassifier(

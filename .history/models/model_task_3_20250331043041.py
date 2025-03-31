@@ -33,7 +33,6 @@ import matplotlib.pyplot as plt
 import shap
 import os
 from sklearn.model_selection import GridSearchCV
-import json
 
 # load measurement data
 measurement_df = pd.read_csv("data/raw/measurement_data.csv", parse_dates=["Measurement date"])
@@ -188,16 +187,7 @@ def train_anomaly_detector(df_filtered):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
         print("\n=== ENTRENANDO XGBOOST ===")
-        model = XGBClassifier(
-            use_label_encoder=False,
-            eval_metric='logloss',
-            random_state=42,
-            colsample_bytree=0.8,
-            learning_rate=0.3,
-            max_depth=4,
-            n_estimators=2,
-            subsample=0.8
-        )
+        model = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
         #vamos a intentar balancear la clase...
         sample_weight = compute_sample_weight(class_weight='balanced', y=y_train)
         # Grid Search (quick)
@@ -222,7 +212,39 @@ def train_anomaly_detector(df_filtered):
         sample_idx = np.random.choice(len(X_train), size=min(20000, len(X_train)), replace=False)
 
         # Use .iloc for positional indexing
-        model, anomalies = anomaly_detection_training(df_features, le, X, X_train, X_test, y_train, y_test, sample_weight, grid_model, sample_idx)
+        X_sample = X_train.iloc[sample_idx]
+        y_sample = y_train[sample_idx]
+        w_sample = sample_weight[sample_idx]
+
+        # Fit the grid search model
+        grid_model.fit(X_sample, y_sample, sample_weight=w_sample)
+
+        print(f"\nBest hyperparameters found: {grid_model.best_params_}")
+        model = grid_model.best_estimator_
+
+        start_time = time.time()
+        #model.fit(X_train, y_train, sample_weight=sample_weight)
+        y_pred_xgb = model.predict(X_test)
+        print("Tiempo de entrenamiento: {:.2f} segundos".format(time.time() - start_time))
+        pass  # Removed unused variables
+
+        # Mostrar clases originales más difíciles de predecir
+        original_preds = le.inverse_transform(y_pred_xgb)
+        original_true = le.inverse_transform(y_test)
+
+        print("\nDistribución de clases predichas (originales):")
+        print(pd.Series(original_preds).value_counts().sort_index())
+
+        print("\nDistribución de clases verdaderas (originales):")
+        print(pd.Series(original_true).value_counts().sort_index())
+
+        importances = model.feature_importances_
+        for name, importance in zip(X.columns, importances):
+            print(f"{name}: {importance:.4f}")
+
+        # Identificar y mostrar anomalías
+        anomalies = df_features[model.predict(X) == 1]  # Suponiendo que 1 representa anomalías
+        print(f"Se encontraron {len(anomalies)} anomalías")
         
         # if not anomalies.empty:
         #     print("\nPrimeras 5 anomalías detectadas:")
@@ -253,9 +275,45 @@ def train_anomaly_detector(df_filtered):
             
                 
 
-            X_bin, X_train_bin, X_test_bin, y_train_bin, y_test_bin, grid_model_bin = prepare_binary_classification_data(df_features, y, eachfeatures, i, clase)
+            y_bin = (y == clase).astype(int)
+            X_bin = df_features[[col for col in eachfeatures[i] if col in df_features.columns]]
+
+            X_train_bin, X_test_bin, y_train_bin, y_test_bin = train_test_split(X_bin, y_bin, test_size=0.3, random_state=42)
+
+            model_bin = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
+            ratio = (y_train_bin == 0).sum() / (y_train_bin == 1).sum()
             
-            model_bin = fit_binary_model(X_train_bin, X_test_bin, y_train_bin, grid_model_bin)
+            param_grid_bin = {
+                'max_depth': [2, 4],
+                'learning_rate': [0.1, 0.3],
+                'subsample': [0.8],
+                'colsample_bytree': [0.8],
+                'n_estimators': [2]
+            }
+            
+            grid_model_bin = GridSearchCV(
+                estimator=XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42),
+                param_grid=param_grid_bin,
+                scoring='f1',
+                cv=2,
+                verbose=1,
+                n_jobs=-1
+            )
+            
+            sample_idx_bin = np.random.choice(len(X_train_bin), size=min(20000, len(X_train_bin)), replace=False)
+            X_sample_bin = X_train_bin.iloc[sample_idx_bin]
+            y_sample_bin = y_train_bin[sample_idx_bin]
+            
+            ratio = (y_sample_bin == 0).sum() / (y_sample_bin == 1).sum()
+            sample_weight_bin = np.where(y_sample_bin == 1, ratio, 1)
+            
+            grid_model_bin.fit(X_sample_bin, y_sample_bin, sample_weight=sample_weight_bin)
+            model_bin = grid_model_bin.best_estimator_
+            
+            model_bin.fit(X_train_bin, y_train_bin)  # Already fit by grid_model_bin
+            explainer_bin = shap.TreeExplainer(model_bin)
+            shap_sample_bin = X_test_bin.sample(min(200000, len(X_test_bin)), random_state=42)
+            shap_values_bin = explainer_bin(shap_sample_bin)
 
             y_proba_bin = model_bin.predict_proba(X_test_bin)[:, 1]
             y_pred_bin = (y_proba_bin > 0.95).astype(int)
@@ -279,10 +337,8 @@ def train_anomaly_detector(df_filtered):
             print("Importancia de características:")
             for name, importance in zip(X_bin.columns, importances):
                 print(f"{name}: {importance:.4f}")
-            # print(f"Mejores hiperparámetros para el modelo binario: {grid_model_bin.best_params_}")
             i+=1
 
-            
         # print("\n=== MATRIZ DE CORRELACIÓN ENTRE FEATURES ===")
         # plt.figure(figsize=(12, 10))
         # corr = df_features.corr(numeric_only=True)
@@ -308,88 +364,6 @@ def train_anomaly_detector(df_filtered):
         if len(np.unique(y)) < 2:
             print("El conjunto de datos tiene solo una clase. Se necesitan al menos dos clases para entrenar el modelo.")
         return None, None
-
-# Mantén el modelo simple con parámetros fijos
-def fit_binary_model(X_train_bin, X_test_bin, y_train_bin, grid_model_bin):
-    # Usar una configuración fija en lugar de búsqueda de hiperparámetros
-    model_bin = XGBClassifier(
-        use_label_encoder=False,
-        eval_metric='logloss',
-        random_state=42,
-        colsample_bytree=0.8,
-        learning_rate=0.3,
-        max_depth=4,
-        n_estimators=2,
-        subsample=0.8
-    )
-    
-    # Calcular pesos para balancear clases
-    full_ratio = (y_train_bin == 0).sum() / (y_train_bin == 1).sum()
-    full_weights = np.where(y_train_bin == 1, full_ratio, 1)
-    
-    # Entrenar directamente sin GridSearchCV
-    model_bin.fit(X_train_bin, y_train_bin, sample_weight=full_weights)
-    
-    return model_bin
-
-def prepare_binary_classification_data(df_features, y, eachfeatures, i, clase):
-    y_bin = (y == clase).astype(int)
-    X_bin = df_features[[col for col in eachfeatures[i] if col in df_features.columns]]
-
-    X_train_bin, X_test_bin, y_train_bin, y_test_bin = train_test_split(X_bin, y_bin, test_size=0.3, random_state=42)
-
-    model_bin = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
-    ratio = (y_train_bin == 0).sum() / (y_train_bin == 1).sum()
-            
-    param_grid_bin = {
-                'max_depth': [2, 4],
-                'learning_rate': [0.1, 0.3],
-                'subsample': [0.8],
-                'colsample_bytree': [0.8],
-                'n_estimators': [2]
-            }
-            
-    grid_model_bin = GridSearchCV(
-                estimator=XGBClassifier(use_label_encoder=False, eval_metric='logloss', random_state=42),
-                param_grid=param_grid_bin,
-                scoring='f1',
-                cv=2,
-                verbose=1,
-                n_jobs=-1
-            )
-    
-    return X_bin,X_train_bin,X_test_bin,y_train_bin,y_test_bin,grid_model_bin
-
-def anomaly_detection_training(df_features, le, X, X_train, X_test, y_train, y_test, sample_weight, grid_model, sample_idx):
-    # Entrenar el modelo principal con parámetros fijos
-    model = XGBClassifier(
-        use_label_encoder=False,
-        eval_metric='logloss',
-        random_state=42,
-        colsample_bytree=0.8,
-        learning_rate=0.3,
-        max_depth=4,
-        n_estimators=2,
-        subsample=0.8
-    )
-    
-    model.fit(X_train, y_train, sample_weight=sample_weight)
-    
-    # Evaluar el modelo
-    y_pred_xgb = model.predict(X_test)
-    
-    # Mostrar resultados
-    original_preds = le.inverse_transform(y_pred_xgb)
-    original_true = le.inverse_transform(y_test)
-    
-    print("\nDistribución de clases predichas (originales):")
-    print(pd.Series(original_preds).value_counts().sort_index())
-    
-    # Identificar anomalías
-    anomalies = df_features[model.predict(X) == 1]
-    print(f"Se encontraron {len(anomalies)} anomalías")
-    
-    return model, anomalies
 
 
 model, _ = train_anomaly_detector(merged_df)
@@ -432,10 +406,8 @@ for input_line in input_list:
     anomalous_dates = df_input.loc[y_pred_input != 0, "Measurement date"]
 
     for date in anomalous_dates:
-        date_str = pd.to_datetime(date).strftime("%Y-%m-%d %H:%M:%S")
-        output_dict.setdefault(str(station_code), {})
-        output_dict[str(station_code)].setdefault(date_str, 0)
-        output_dict[str(station_code)][date_str] += 1
+        date_str = str(date)
+        output_dict[str(station_code)][date_str] = output_dict[str(station_code)].get(date_str, 0) + 1
 
 with open("anomaly_predictions.json", "w") as f:
     json.dump({"target": output_dict}, f, indent=2)

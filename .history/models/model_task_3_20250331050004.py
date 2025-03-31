@@ -279,7 +279,7 @@ def train_anomaly_detector(df_filtered):
             print("Importancia de características:")
             for name, importance in zip(X_bin.columns, importances):
                 print(f"{name}: {importance:.4f}")
-            # print(f"Mejores hiperparámetros para el modelo binario: {grid_model_bin.best_params_}")
+            print(f"Mejores hiperparámetros para el modelo binario: {grid_model_bin.best_params_}")
             i+=1
 
             

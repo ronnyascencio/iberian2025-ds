@@ -1,9 +1,30 @@
+"""Task 3: Detect anomalies in data measurements
+Detect instrument anomalies for the following stations and periods:
+
+
+
+Station code: 205 | pollutant: SO2
+ | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00
+Station code: 209 | pollutant: NO2
+ | Period: 2023-09-01 00:00:00 - 2023-09-30 23:00:00
+Station code: 223 | pollutant: O3
+ | Period: 2023-07-01 00:00:00 - 2023-07-31 23:00:00
+Station code: 224 | pollutant: CO
+  | Period: 2023-10-01 00:00:00 - 2023-10-31 23:00:00
+Station code: 226 | pollutant: PM10
+ | Period: 2023-08-01 00:00:00 - 2023-08-31 23:00:00
+Station code: 227 | pollutant: PM2.5
+| Period: 2023-12-01 00:00:00 - 2023-12-31 23:00:00
 """
-Partimos de la hipótesis de que todas las variables afectan al estado del instrumento.
-Ya que 'Instrument Status' es de categoría, intentaremos un modelo de clasificación.
-"""
-import json
+
 import pandas as pd
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+import time
+from lightgbm import LGBMClassifier
 from xgboost import XGBClassifier
 from sklearn.preprocessing import LabelEncoder
 from sklearn.utils.class_weight import compute_sample_weight
@@ -12,24 +33,49 @@ import matplotlib.pyplot as plt
 import shap
 import os
 from sklearn.model_selection import GridSearchCV
-import json
 
+# load measurement data
 measurement_df = pd.read_csv("data/raw/measurement_data.csv", parse_dates=["Measurement date"])
 instrument_df = pd.read_csv("data/raw/instrument_data.csv", parse_dates=["Measurement date"])
 pollutant_df = pd.read_csv("data/raw/pollutant_data.csv")
 
+# Fusionar datos de medición e instrumento
 merged_df = pd.merge(measurement_df, instrument_df, on=["Measurement date", "Station code"])
+print("Fechas únicas en merged_df:")
+print(merged_df["Measurement date"].unique())
+print(merged_df.columns)
+# Preparar entradas
+input_list = [
+    "Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00",
+    "Station code: 209 | pollutant: NO2   | Period: 2023-09-01 00:00:00 - 2023-09-30 23:00:00",
+    "Station code: 223 | pollutant: O3    | Period: 2023-07-01 00:00:00 - 2023-07-31 23:00:00",
+    "Station code: 224 | pollutant: CO    | Period: 2023-10-01 00:00:00 - 2023-10-31 23:00:00",
+    "Station code: 226 | pollutant: PM10  | Period: 2023-08-01 00:00:00 - 2023-08-31 23:00:00",
+    "Station code: 227 | pollutant: PM2.5 | Period: 2023-12-01 00:00:00 - 2023-12-31 23:00:00",
+]
 
-input_string = """
-Station code: 205 | pollutant: SO2   | Period: 2023-11-01 00:00:00 - 2023-11-30 23:00:00
-Station code: 209 | pollutant: NO2   | Period: 2023-09-01 00:00:00 - 2023-09-30 23:00:00
-Station code: 223 | pollutant: O3    | Period: 2023-07-01 00:00:00 - 2023-07-31 23:00:00
-Station code: 224 | pollutant: CO    | Period: 2023-10-01 00:00:00 - 2023-10-31 23:00:00
-Station code: 226 | pollutant: PM10  | Period: 2023-08-01 00:00:00 - 2023-08-31 23:00:00
-Station code: 227 | pollutant: PM2.5 | Period: 2023-12-01 00:00:00 - 2023-12-31 23:00:00
-"""
+def input_preparer(line, pollutant_data):
+    parts = line.split("|")
+    
+    station_code = int(parts[0].split(":")[1].strip())
+    pollutant = parts[1].split(":")[1].strip()
+    start_date, end_date = parts[2].split("Period:")[1].strip().split(" - ")
 
-iter_str = iter(input_string.splitlines()[1:])
+    
+    # Buscar el código de contaminante y manejar posibles errores
+    matching_pollutants = pollutant_data[pollutant_data["Item name"] == pollutant.strip()]
+    if matching_pollutants.empty:
+        print(f"¡ADVERTENCIA! No se encontró el contaminante: '{pollutant}' en los datos.")
+        print("Contaminantes disponibles:", pollutant_data["Item name"].unique())
+        return None, None, None, None
+    
+    pollutant_code = matching_pollutants["Item code"].values[0]
+    
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+    
+    return station_code, pollutant_code, start_date, end_date
+
 
 def data_filter(StatCode, ItCode, start_date, end_date):
     print("Filtrando con:")
@@ -141,16 +187,7 @@ def train_anomaly_detector(df_filtered):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
         print("\n=== ENTRENANDO XGBOOST ===")
-        model = XGBClassifier(
-            use_label_encoder=False,
-            eval_metric='logloss',
-            random_state=42,
-            colsample_bytree=0.8,
-            learning_rate=0.3,
-            max_depth=4,
-            n_estimators=2,
-            subsample=0.8
-        )
+        model = XGBClassifier(n_estimators=10, use_label_encoder=False, eval_metric='logloss', random_state=42)
         #vamos a intentar balancear la clase...
         sample_weight = compute_sample_weight(class_weight='balanced', y=y_train)
         # Grid Search (quick)
@@ -232,10 +269,8 @@ def train_anomaly_detector(df_filtered):
             print("Importancia de características:")
             for name, importance in zip(X_bin.columns, importances):
                 print(f"{name}: {importance:.4f}")
-            # print(f"Mejores hiperparámetros para el modelo binario: {grid_model_bin.best_params_}")
             i+=1
 
-            
         # print("\n=== MATRIZ DE CORRELACIÓN ENTRE FEATURES ===")
         # plt.figure(figsize=(12, 10))
         # corr = df_features.corr(numeric_only=True)
@@ -262,27 +297,21 @@ def train_anomaly_detector(df_filtered):
             print("El conjunto de datos tiene solo una clase. Se necesitan al menos dos clases para entrenar el modelo.")
         return None, None
 
-# Mantén el modelo simple con parámetros fijos
 def fit_binary_model(X_train_bin, X_test_bin, y_train_bin, grid_model_bin):
-    # Usar una configuración fija en lugar de búsqueda de hiperparámetros
-    model_bin = XGBClassifier(
-        use_label_encoder=False,
-        eval_metric='logloss',
-        random_state=42,
-        colsample_bytree=0.8,
-        learning_rate=0.3,
-        max_depth=4,
-        n_estimators=2,
-        subsample=0.8
-    )
-    
-    # Calcular pesos para balancear clases
-    full_ratio = (y_train_bin == 0).sum() / (y_train_bin == 1).sum()
-    full_weights = np.where(y_train_bin == 1, full_ratio, 1)
-    
-    # Entrenar directamente sin GridSearchCV
-    model_bin.fit(X_train_bin, y_train_bin, sample_weight=full_weights)
-    
+    sample_idx_bin = np.random.choice(len(X_train_bin), size=min(20000, len(X_train_bin)), replace=False)
+    X_sample_bin = X_train_bin.iloc[sample_idx_bin]
+    y_sample_bin = y_train_bin[sample_idx_bin]
+            
+    ratio = (y_sample_bin == 0).sum() / (y_sample_bin == 1).sum()
+    sample_weight_bin = np.where(y_sample_bin == 1, ratio, 1)
+            
+    grid_model_bin.fit(X_sample_bin, y_sample_bin, sample_weight=sample_weight_bin)
+    model_bin = grid_model_bin.best_estimator_
+            
+    model_bin.fit(X_train_bin, y_train_bin)  # Already fit by grid_model_bin
+    explainer_bin = shap.TreeExplainer(model_bin)
+    shap_sample_bin = X_test_bin.sample(min(200000, len(X_test_bin)), random_state=42)
+    shap_values_bin = explainer_bin(shap_sample_bin)
     return model_bin
 
 def prepare_binary_classification_data(df_features, y, eachfeatures, i, clase):
@@ -314,35 +343,40 @@ def prepare_binary_classification_data(df_features, y, eachfeatures, i, clase):
     return X_bin,X_train_bin,X_test_bin,y_train_bin,y_test_bin,grid_model_bin
 
 def anomaly_detection_training(df_features, le, X, X_train, X_test, y_train, y_test, sample_weight, grid_model, sample_idx):
-    # Entrenar el modelo principal con parámetros fijos
-    model = XGBClassifier(
-        use_label_encoder=False,
-        eval_metric='logloss',
-        random_state=42,
-        colsample_bytree=0.8,
-        learning_rate=0.3,
-        max_depth=4,
-        n_estimators=2,
-        subsample=0.8
-    )
-    
-    model.fit(X_train, y_train, sample_weight=sample_weight)
-    
-    # Evaluar el modelo
+    X_sample = X_train.iloc[sample_idx]
+    y_sample = y_train[sample_idx]
+    w_sample = sample_weight[sample_idx]
+
+        # Fit the grid search model
+    grid_model.fit(X_sample, y_sample, sample_weight=w_sample)
+
+    print(f"\nBest hyperparameters found: {grid_model.best_params_}")
+    model = grid_model.best_estimator_
+
+    start_time = time.time()
+        #model.fit(X_train, y_train, sample_weight=sample_weight)
     y_pred_xgb = model.predict(X_test)
-    
-    # Mostrar resultados
+    print("Tiempo de entrenamiento: {:.2f} segundos".format(time.time() - start_time))
+    pass  # Removed unused variables
+
+        # Mostrar clases originales más difíciles de predecir
     original_preds = le.inverse_transform(y_pred_xgb)
     original_true = le.inverse_transform(y_test)
-    
+
     print("\nDistribución de clases predichas (originales):")
     print(pd.Series(original_preds).value_counts().sort_index())
-    
-    # Identificar anomalías
-    anomalies = df_features[model.predict(X) == 1]
+
+    print("\nDistribución de clases verdaderas (originales):")
+    print(pd.Series(original_true).value_counts().sort_index())
+
+    importances = model.feature_importances_
+    for name, importance in zip(X.columns, importances):
+        print(f"{name}: {importance:.4f}")
+
+        # Identificar y mostrar anomalías
+    anomalies = df_features[model.predict(X) == 1]  # Suponiendo que 1 representa anomalías
     print(f"Se encontraron {len(anomalies)} anomalías")
-    
-    return model, anomalies
+    return model,anomalies
 
 
 model, _ = train_anomaly_detector(merged_df)
